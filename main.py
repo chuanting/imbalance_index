@@ -20,41 +20,54 @@ import dask.dataframe as dd
 from dask.distributed import Client, LocalCluster
 import time
 import os
+import dask
 
 
 def split_poly_into_grids(poly, rows=100, cols=100):
-    lon_min, lat_min, lon_max, lat_max = poly['geometry'].total_bounds
-    whole_poly = Polygon([[lon_min, lat_max],
-                          [lon_max, lat_max],
-                          [lon_max, lat_min],
-                          [lon_min, lat_min],
-                          [lon_min, lat_max]])
-
-    whole_poly = gpd.GeoSeries(whole_poly)
-    whole_poly.crs = CRS("epsg:4326")
-
-    xmin, ymin, xmax, ymax = whole_poly.total_bounds
-
-    height = (ymax - ymin) / rows
-    width = (xmax - xmin) / cols
-    x_left = xmin
-    x_right = xmin + width
-    y_top = ymax
-    y_bot = ymax - height
+    poly = poly.explode().reset_index()
+    poly.loc[:, 'area'] = poly['geometry'].area
+    poly = poly.sort_values(by='area', ascending=False)
+    grid_index = 0
     polygons = []
-    for i in range(cols):
-        y_top_temp = y_top
-        y_bot_temp = y_bot
-        for j in range(rows):
-            p = Polygon([(x_left, y_top_temp),
-                         (x_right, y_top_temp),
-                         (x_right, y_bot_temp),
-                         (x_left, y_bot_temp)])
-            polygons.append(geojson.Feature(geometry=p, properties={"id": i * cols + j}))
-            y_top_temp = y_top_temp - height
-            y_bot_temp = y_bot_temp - height
-        x_left = x_left + width
-        x_right = x_right + width
+    for k in range(poly.shape[0]):
+        poly_inside = poly.iloc[k]
+        lon_min, lat_min, lon_max, lat_max = poly_inside['geometry'].bounds
+        whole_poly = Polygon([[lon_min, lat_max],
+                              [lon_max, lat_max],
+                              [lon_max, lat_min],
+                              [lon_min, lat_min],
+                              [lon_min, lat_max]])
+
+        whole_poly = gpd.GeoSeries(whole_poly)
+        whole_poly.crs = CRS("epsg:4326")
+
+        xmin, ymin, xmax, ymax = whole_poly.total_bounds
+
+        height = (ymax - ymin) / rows
+        width = (xmax - xmin) / cols
+        x_left = xmin
+        x_right = xmin + width
+        y_top = ymax
+        y_bot = ymax - height
+
+        if k >= 3:
+            break
+
+        for i in range(cols):
+            y_top_temp = y_top
+            y_bot_temp = y_bot
+            for j in range(rows):
+                p = Polygon([(x_left, y_top_temp),
+                             (x_right, y_top_temp),
+                             (x_right, y_bot_temp),
+                             (x_left, y_bot_temp)])
+                polygons.append(geojson.Feature(geometry=p, properties={"id": grid_index}))
+                y_top_temp = y_top_temp - height
+                y_bot_temp = y_bot_temp - height
+
+                grid_index += 1
+            x_left = x_left + width
+            x_right = x_right + width
 
     fc_grid = geojson.FeatureCollection(polygons)
 
@@ -76,7 +89,7 @@ def get_info_per_grid(bs, pop, poly, grid):
     df_country_geo = GeoDataFrame({'geometry': PointArray(gpd_grid[['lon', 'lat']].values.tolist()),
                                    'id': gpd_grid['id']})
     df_country_geo = dd.from_pandas(df_country_geo, npartitions=16).persist()
-    df_country_grid = sjoin(df_country_geo, poly).compute()
+    df_country_grid = sjoin(df_country_geo, poly)
 
     gpd_grid = gpd_grid.loc[df_country_grid.index]
     print('Time: {:}'.format(time.time() - start))
@@ -101,19 +114,20 @@ def get_info_per_grid(bs, pop, poly, grid):
 
     print('Calculating population per grid')
     start = time.time()
-    pop_per_grid = sjoin(gdf_population, gpd_grid).compute()
+    pop_per_grid = sjoin(gdf_population, gpd_grid)
     pop_per_grid_group = pop_per_grid.groupby('id').sum().reset_index()[['id', 'pop']]
     print('Time: {:}'.format(time.time() - start))
 
     print('Calculating # of BS per grid')
     start = time.time()
-    bs_per_grid = sjoin(gdf_bs, gpd_grid).compute()
+    bs_per_grid = sjoin(gdf_bs, gpd_grid)
     bs_per_grid_group = bs_per_grid.groupby('id').count().reset_index()[['id', 'index_right']]
     bs_per_grid_group.columns = ['id', 'bs']
     print('Time: {:}'.format(time.time() - start))
 
     print('Align BS and grid')
     start = time.time()
+    pop_per_grid_group, bs_per_grid_group = dask.compute(pop_per_grid_group, bs_per_grid_group)
     pop_align = pd.merge(left=pop_per_grid_group, right=gpd_grid, on='id', how='right')
     bs_align = pd.merge(left=bs_per_grid_group, right=gpd_grid, on='id', how='right')
 
@@ -159,45 +173,43 @@ def main():
     poly_file = folder + 'ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp'
     print('Loading worldwide boundary file')
     worldwide = gpd.read_file(poly_file)
-    worldwide.to_file(folder+'world_poly.geojson', driver='GeoJSON')
+    worldwide.loc[worldwide['ADM0_A3'] == 'SDS', 'ADM0_A3'] = 'SSD'
+    worldwide.to_file(folder + 'world_poly.geojson', driver='GeoJSON')
 
     # BS file
     df_bs = pd.read_csv('D:/Dataset/cell_towers/cell_towers_2020-12-08-T000000.csv')
-    # MCC file
-    df_mcc = pd.read_csv(folder + 'mcc-mnc-table.csv')
 
     country_names = 'data/MCI_Data_2020.xls'
     df_country_info = pd.read_excel(country_names, skiprows=2, sheet_name=2)
     df_name = df_country_info.loc[df_country_info['Year'] == 2019]
-    i = 1
-    for name in df_name['ISO Code']:
-        print(name)
-        if i <= 45:
+    for i, name in enumerate(df_name['ISO Code']):
+        print(i, name)
+        # if i <= 158:
+        #     continue
+        # if i > 159:
+        #     break
+
+        if name != 'USA':
             continue
         print('Now processing {:} data'.format(name))
 
-        mcc = mobile_codes.alpha3(name).mcc
-        # a2 = worldwide.loc[worldwide['ADM0_A3'] == name]['ISO_A2'].str.lower()
-        # if a2 is not None:
-        #     iso_a2 = a2.values[0]
-        # else:
-        #     print('Did not find ISO-A2')
-        #     continue
-        # iso_a2 = worldwide.loc[worldwide['ADM0_A3'] == name]['ISO_A2'].str.lower().values[0]
-        # mcc = df_mcc.loc[df_mcc['ISO'] == iso_a2]['MCC'].unique()[0]
-        country_bs = df_bs.loc[df_bs['mcc'] == mcc]
+        mcc = np.array([mobile_codes.alpha3(name).mcc], dtype=int).ravel()
+        country_bs = df_bs.loc[df_bs['mcc'].isin(mcc)]
         country_pop_file = 'data/{:}.gz'.format(name)
 
         # load population data
         if not os.path.exists(country_pop_file):
             print('File not exists')
             continue
+
         df_pop = pd.read_csv(country_pop_file, compression='gzip', header=0, sep='\t')
-        df_poly = GeoDataFrame(worldwide.loc[worldwide['ISO_A3'] == name])
+        df_poly = worldwide.loc[worldwide['ADM0_A3'] == name]
 
         # split the poly into many small grids
         n_row, n_col = 200, 200
         country_grid = split_poly_into_grids(df_poly, n_row, n_col)
+
+        df_poly = GeoDataFrame(df_poly)
         # save the grid file
         with open(folder + name + '_grid.geojson', 'w') as f:
             geojson.dump(country_grid, f)
@@ -221,13 +233,12 @@ def main():
         inf_imbalance = all_info.loc[all_info['imbalance_index'] == np.inf, 'pop'] / user_per_bs
         all_info.loc[all_info['imbalance_index'] == np.inf, 'imbalance_index'] = inf_imbalance.values
         all_info.to_geopandas().to_file(folder + name + '_index.geojson', driver='GeoJSON')
-        i += 1
 
 
 if __name__ == '__main__':
-    # create dask client
-    cluster = LocalCluster(dashboard_address=':8790',
-                           n_workers=16,
-                           threads_per_worker=1)
-    client = Client(cluster)
+    # # create dask client
+    # cluster = LocalCluster(dashboard_address=':8790',
+    #                        n_workers=10,
+    #                        threads_per_worker=1, memory_limit='3 GB')
+    # client = Client(cluster)
     main()
