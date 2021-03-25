@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 -----------------------------------------------
-# File: main.py
+# File: 01_gird_level_index.py
 # This file is created by Chuanting Zhang
 # Email: chuanting.zhang@kaust.edu.sa
-# Date: 2021-03-16 (YYYY-MM-DD)
+# Date: 2021-03-18 (YYYY-MM-DD)
 -----------------------------------------------
 """
 import numpy as np
@@ -16,15 +16,13 @@ import geojson
 import mobile_codes
 from spatialpandas import GeoDataFrame, sjoin
 from spatialpandas.geometry import PointArray
-import dask.dataframe as dd
-from dask.distributed import Client, LocalCluster
 import time
 import os
-import dask
 
 
 def split_poly_into_grids(poly, rows=100, cols=100):
     poly = poly.explode().reset_index()
+    poly['area'] = 0
     poly.loc[:, 'area'] = poly['geometry'].area
     poly = poly.sort_values(by='area', ascending=False)
     grid_index = 0
@@ -39,7 +37,7 @@ def split_poly_into_grids(poly, rows=100, cols=100):
                               [lon_min, lat_max]])
 
         whole_poly = gpd.GeoSeries(whole_poly)
-        whole_poly.crs = CRS("epsg:4326")
+        # whole_poly.crs = CRS("epsg:4326")
 
         xmin, ymin, xmax, ymax = whole_poly.total_bounds
 
@@ -83,12 +81,11 @@ def get_info_per_grid(bs, pop, poly, grid):
     grid['lon'] = x.values
     grid['lat'] = y.values
 
-    grid.set_crs('epsg:4326', inplace=True, allow_override=True)
+    # grid.set_crs('epsg:4326', inplace=True, allow_override=True)
     gpd_grid = GeoDataFrame(grid)
 
     df_country_geo = GeoDataFrame({'geometry': PointArray(gpd_grid[['lon', 'lat']].values.tolist()),
                                    'id': gpd_grid['id']})
-    # df_country_geo = dd.from_pandas(df_country_geo)
     df_country_grid = sjoin(df_country_geo, poly)
 
     gpd_grid = gpd_grid.loc[df_country_grid.index]
@@ -98,20 +95,11 @@ def get_info_per_grid(bs, pop, poly, grid):
     start = time.time()
     gdf_population = GeoDataFrame({'pop': pop['population'],
                                    'geometry': PointArray(pop[['longitude', 'latitude']].values.tolist())})
-    # Large spatialpandas DaskGeoDataFrame with 16 partitions
-    # gdf_population = dd.from_pandas(gdf_population, npartitions=16).persist()
-    # gdf_population = dd.from_pandas(gdf_population)
-    # Pre-compute the partition-level spatial index
-    # gdf_population.partition_sindex
-    print(gdf_population.shape)
     print('Time: {:}'.format(time.time() - start))
 
     start = time.time()
     print('Creating GeoDataFrame from bs data...')
     gdf_bs = GeoDataFrame({'geometry': PointArray(bs[['lon', 'lat']].values.tolist())})
-    # gdf_bs = dd.from_pandas(gdf_bs, npartitions=16).persist()
-    # gdf_bs = dd.from_pandas(gdf_bs)
-    # gdf_bs.partition_sindex
     print('Time: {:}'.format(time.time() - start))
 
     print('Calculating population per grid')
@@ -129,7 +117,6 @@ def get_info_per_grid(bs, pop, poly, grid):
 
     print('Align BS and grid')
     start = time.time()
-    # pop_per_grid_group, bs_per_grid_group = dask.compute(pop_per_grid_group, bs_per_grid_group)
     pop_align = pd.merge(left=pop_per_grid_group, right=gpd_grid, on='id', how='right')
     bs_align = pd.merge(left=bs_per_grid_group, right=gpd_grid, on='id', how='right')
 
@@ -172,6 +159,9 @@ def imbalance_index(pop, bs, users_per_bs=100, a=1.0, b=1.0):
 def main():
     # worldwide boundaries in shape file
     folder = 'data/'
+    save_folder = 'data/grid/'
+    if not os.path.isdir(save_folder):
+        os.makedirs(save_folder)
     poly_file = folder + 'ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp'
     print('Loading worldwide boundary file')
     worldwide = gpd.read_file(poly_file)
@@ -186,6 +176,9 @@ def main():
     df_name = df_country_info.loc[df_country_info['Year'] == 2019]
     for i, name in enumerate(df_name['ISO Code']):
         print('Now processing {:} data'.format(name))
+
+        # if i > 2:
+        #     break
 
         mcc = np.array([mobile_codes.alpha3(name).mcc], dtype=int).ravel()
         country_bs = df_bs.loc[df_bs['mcc'].isin(mcc)]
@@ -208,34 +201,29 @@ def main():
 
         df_poly = GeoDataFrame(df_poly)
         # save the grid file
-        with open(folder + name + '_grid.geojson', 'w') as f:
-            geojson.dump(country_grid, f)
+        # with open(save_folder + name + '_grid.geojson', 'w') as f:
+        #     geojson.dump(country_grid, f)
         df_grid = gpd.GeoDataFrame.from_features(country_grid['features'])
 
         # get the number of BS and population per grid
         start = time.time()
         all_info = get_info_per_grid(country_bs, df_pop, df_poly, df_grid)
-        all_info.to_geopandas().to_file(folder + name + '_all.geojson', driver='GeoJSON')
+        all_info.to_geopandas().to_file(save_folder + name + '_all.geojson', driver='GeoJSON')
         print('Time: {:}'.format(time.time() - start))
 
-        # calculate the imbalance index
-        print('Calculating imbalance index per grid...')
-        user_per_bs = 100
-        alpha = 1.0
-        beta = 1.0
-        all_info['imbalance_index'] = all_info['pop'] / (all_info['bs'] * user_per_bs)
-        all_info['new_imbalance_index'] = imbalance_index(all_info['pop'], all_info['bs'], user_per_bs, alpha, beta)
-        all_info.loc[(all_info['pop'] == 0) & (all_info['bs'] == 0), 'imbalance_index'] = 0.0
-
-        inf_imbalance = all_info.loc[all_info['imbalance_index'] == np.inf, 'pop'] / user_per_bs
-        all_info.loc[all_info['imbalance_index'] == np.inf, 'imbalance_index'] = inf_imbalance.values
-        all_info.to_geopandas().to_file(folder + name + '_index.geojson', driver='GeoJSON')
+        # # calculate the imbalance index
+        # print('Calculating imbalance index per grid...')
+        # user_per_bs = 100
+        # alpha = 1.0
+        # beta = 1.0
+        # all_info['old'] = all_info['pop'] / (all_info['bs'] * user_per_bs)
+        # all_info['new'] = imbalance_index(all_info['pop'], all_info['bs'], user_per_bs, alpha, beta)
+        # all_info.loc[(all_info['pop'] == 0) & (all_info['bs'] == 0), 'old'] = 0.0
+        #
+        # inf_imbalance = all_info.loc[all_info['old'] == np.inf, 'pop'] / user_per_bs
+        # all_info.loc[all_info['old'] == np.inf, 'old'] = inf_imbalance.values
+        # all_info.to_geopandas().to_file(save_folder + name + '_index.geojson', driver='GeoJSON')
 
 
 if __name__ == '__main__':
-    # # create dask client
-    # cluster = LocalCluster(dashboard_address=':8790',
-    #                        n_workers=10,
-    #                        threads_per_worker=1, memory_limit='10 GB')
-    # client = Client(cluster)
     main()

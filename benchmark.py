@@ -19,7 +19,7 @@ from dask.distributed import Client, LocalCluster
 
 
 if __name__ == '__main__':
-    cluster = LocalCluster(dashboard_address=':8790',
+    cluster = LocalCluster(dashboard_address=':8791',
                            n_workers=16,
                            threads_per_worker=1,
                            memory_limit='5 GB')
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     cities_df = GeoDataFrame(cities_gp)
     print(cities_df.head())
 
-    reps = 100000
+    reps = 500000
     # Large geopandas GeoDataFrame
     cities_large_gp = pd.concat([cities_gp] * reps, axis=0)
 
@@ -61,9 +61,9 @@ if __name__ == '__main__':
     # start = time.time()
     # print(len(gp_sjoin(cities_large_gp, world_gp)))
     # print('Time: {:}'.format(time.time() - start))
-    # start = time.time()
-    # print(len(sjoin(cities_large_df, world_df)))
-    # print('Time: {:}'.format(time.time() - start))
+    start = time.time()
+    print(len(sjoin(cities_large_df, world_df)))
+    print('Time: {:}'.format(time.time() - start))
     start = time.time()
     print(len(sjoin(cities_large_ddf, world_df)))
     print('Time: {:}'.format(time.time() - start))
