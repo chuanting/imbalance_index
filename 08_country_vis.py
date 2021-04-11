@@ -8,58 +8,7 @@
 -----------------------------------------------
 """
 import numpy as np
-import pandas as pd
 import geopandas as gpd
-import mobile_codes
-from spatialpandas import GeoDataFrame, sjoin
-from spatialpandas.geometry import PointArray
-import time
-import os
-
-
-def get_info_per_grid(bs, pop, poly):
-    print('Creating GeoDataFrame from population data...')
-    start = time.time()
-    gdf_population = GeoDataFrame({'pop': pop['population'],
-                                   'geometry': PointArray(pop[['longitude', 'latitude']].values.tolist())})
-    print(gdf_population.shape)
-    print('Time: {:}'.format(time.time() - start))
-
-    start = time.time()
-    print('Creating GeoDataFrame from bs data...')
-    gdf_bs = GeoDataFrame({'geometry': PointArray(bs[['lon', 'lat']].values.tolist()),
-                           'bs': 1.0})
-    print('Time: {:}'.format(time.time() - start))
-
-    print('Calculating population per grid')
-    start = time.time()
-    pop_per_grid = sjoin(gdf_population, poly)
-    pop_per_grid_group = pop_per_grid.groupby('UID').sum().reset_index()[['UID', 'pop']]
-    print('Time: {:}'.format(time.time() - start))
-
-    print('Calculating # of BS per grid')
-    start = time.time()
-    bs_per_grid = sjoin(gdf_bs, poly)
-    bs_per_grid_group = bs_per_grid.groupby('UID').sum().reset_index()[['UID', 'bs']]
-    # bs_per_grid_group.columns = ['UID', 'bs']
-    print('Time: {:}'.format(time.time() - start))
-
-    print('Align BS and grid')
-    start = time.time()
-    # pop_per_grid_group, bs_per_grid_group = dask.compute(pop_per_grid_group, bs_per_grid_group)
-    pop_align = pd.merge(left=pop_per_grid_group, right=poly, on='UID', how='right')
-    bs_align = pd.merge(left=bs_per_grid_group, right=poly, on='UID', how='right')
-
-    pop_align['pop'].fillna(0, inplace=True)
-    bs_align['bs'].fillna(0, inplace=True)
-    print('Time: {:}'.format(time.time() - start))
-
-    pop_align['bs'] = bs_align['bs']
-
-    print('Saving to local disk')
-    # print(pop_align)
-    all_info = GeoDataFrame(pop_align)
-    return all_info
 
 
 def imbalance_index(pop, bs, users_per_bs=100, a=1.0, b=1.0):
@@ -90,25 +39,39 @@ def imbalance_index(pop, bs, users_per_bs=100, a=1.0, b=1.0):
 def main():
     # worldwide boundaries in shape file
     folder = 'data/target_country/'
-    save_folder = 'data/division/'
-    target_country = ['USA', 'SAU', 'FRA', 'UGA', 'TUN']
+    division_folder = 'data/division/'
+    grid_folder = 'data/grid/'
+    target_country = ['USA', 'SAU', 'BRA', 'UGA', 'TUN', 'TZA', 'ZAF', 'VNM', 'ROU', 'ESP', 'THA']
+    rho_values = [rho for rho in range(5, 105, 5)]
+    col_names = [str(col) for col in rho_values]
     for i, name in enumerate(target_country):
         print(i, name)
         print('Now processing {:} data'.format(name))
         # get the number of BS and population per grid
-        all_info = gpd.read_file(save_folder + name + '_all.geojson')
+        division_wise_info = gpd.read_file(division_folder + name + '_all.geojson')
+        grid_wise_info = gpd.read_file(grid_folder + name + '_all.geojson')
 
         # calculate the imbalance index
         print('Calculating imbalance index per grid...')
+        for j, upb in enumerate(rho_values):
+            division_wise_info[col_names[j]] = imbalance_index(division_wise_info['pop'],
+                                                               division_wise_info['bs'],
+                                                               upb)
+            grid_wise_info[col_names[j]] = imbalance_index(grid_wise_info['pop'],
+                                                           grid_wise_info['bs'],
+                                                           upb)
+        division_wise_info = division_wise_info[['pop', 'bs', 'geometry'] + col_names]
+        grid_wise_info = grid_wise_info[['pop', 'bs', 'geometry', 'lon', 'lat'] + col_names]
 
-        user_per_bs = 100
-        if name == 'USA':
-            user_per_bs = 50
+        # output the obtained index results (division wise)
+        division_wise_info.to_file(folder + name + '.division.shp')
+        df_division_info = gpd.GeoDataFrame(division_wise_info)
+        df_division_info.to_file(folder + name + '.division.geojson', driver='GeoJSON')
 
-        all_info['index'] = imbalance_index(all_info['pop'], all_info['bs'], user_per_bs)
-
-        all_info = all_info[['UID', 'pop', 'GID_0', 'NAME_0', 'GID_1', 'NAME_1', 'GID_2', 'NAME_2', 'bs', 'index', 'geometry']]
-        all_info.to_file(folder + name + '.shp')
+        # output the obtained index results (grid wise)
+        grid_wise_info.to_file(folder + name + '.grid.shp')
+        df_grid_info = gpd.GeoDataFrame(grid_wise_info)
+        df_grid_info.to_file(folder + name + '.grid.geojson', driver='GeoJSON')
 
 
 if __name__ == '__main__':

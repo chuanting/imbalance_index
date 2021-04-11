@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 -----------------------------------------------
-# File: 01_gird_level_index.py
+# File: 01_grid_level_index.py
 # This file is created by Chuanting Zhang
 # Email: chuanting.zhang@kaust.edu.sa
 # Date: 2021-03-18 (YYYY-MM-DD)
@@ -180,6 +180,9 @@ def main():
         # if i > 2:
         #     break
 
+        if name != 'USA':
+            continue
+
         mcc = np.array([mobile_codes.alpha3(name).mcc], dtype=int).ravel()
         country_bs = df_bs.loc[df_bs['mcc'].isin(mcc)]
         country_pop_file = 'data/{:}.gz'.format(name)
@@ -208,21 +211,21 @@ def main():
         # get the number of BS and population per grid
         start = time.time()
         all_info = get_info_per_grid(country_bs, df_pop, df_poly, df_grid)
-        all_info.to_geopandas().to_file(save_folder + name + '_all.geojson', driver='GeoJSON')
-        print('Time: {:}'.format(time.time() - start))
+        # all_info.to_geopandas().to_file(save_folder + name + '_all.geojson', driver='GeoJSON')
+        # print('Time: {:}'.format(time.time() - start))
 
-        # # calculate the imbalance index
-        # print('Calculating imbalance index per grid...')
-        # user_per_bs = 100
-        # alpha = 1.0
-        # beta = 1.0
+        # calculate the imbalance index
+        print('Calculating imbalance index per grid...')
+        user_per_bs = 20
+        alpha = 1.0
+        beta = 1.0
         # all_info['old'] = all_info['pop'] / (all_info['bs'] * user_per_bs)
-        # all_info['new'] = imbalance_index(all_info['pop'], all_info['bs'], user_per_bs, alpha, beta)
+        all_info['new'] = imbalance_index(all_info['pop'], all_info['bs'], user_per_bs, alpha, beta)
         # all_info.loc[(all_info['pop'] == 0) & (all_info['bs'] == 0), 'old'] = 0.0
-        #
+
         # inf_imbalance = all_info.loc[all_info['old'] == np.inf, 'pop'] / user_per_bs
         # all_info.loc[all_info['old'] == np.inf, 'old'] = inf_imbalance.values
-        # all_info.to_geopandas().to_file(save_folder + name + '_index.geojson', driver='GeoJSON')
+        all_info.to_geopandas().to_file(save_folder + name + '_index.geojson', driver='GeoJSON')
 
 
 if __name__ == '__main__':

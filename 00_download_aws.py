@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 -----------------------------------------------
-# File: download_aws.py
+# File: 00_download_aws.py
 # This file is created by Chuanting Zhang
 # Email: chuanting.zhang@kaust.edu.sa
 # Date: 2021-03-15 (YYYY-MM-DD)

@@ -50,14 +50,16 @@ def main():
         whole_name = mobile_codes.alpha3(alpha3).name
         # whole_name = mobile_codes.alpha3(file[10:13]).name
         print(i, whole_name)
+
+        small_regions = ['HKG', 'CYP', 'KWT', 'SGP', 'MLT', 'QAT', 'TTO', 'THA', 'CZE', 'SAU']
+        if alpha3 not in small_regions:
+            continue
+
         df_all = gpd.read_file(file)
         df_all = df_all.loc[df_all['pop'] > 0]
         print('Calculating imbalance index per grid...')
 
-        user_per_bs = 100
-        small_regions = ['HKG', 'CYP', 'KWT', 'SGP', 'MLT', 'QAT', 'TTO', 'THA', 'CZE', 'SAU']
-        if alpha3 in small_regions:
-            user_per_bs = 20
+        user_per_bs = 50
 
         df_all['index'] = imbalance_index(df_all['pop'], df_all['bs'], user_per_bs)
         new_index = df_all['index'].mean()
@@ -67,7 +69,7 @@ def main():
     df = pd.DataFrame(final_results, columns=header)
     df.sort_values(by='index', ascending=True, inplace=True)
     df['index'] = df['index'].round(4)
-    df.to_csv(folder + 'worldwide_index.csv', index=False)
+    df.to_csv(folder + 'worldwide_index_20.csv', index=False)
 
 
 if __name__ == '__main__':

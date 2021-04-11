@@ -49,7 +49,7 @@ def imbalance_index(pop, bs, users_per_bs=100, a=1.0, b=1.0):
 
 
 def main():
-    folder = 'data/grid/'
+    folder = 'data/division/'
     final_results = []
     gsma_file = 'data/MCI_Data_2020.xls'
     gsma_data = pd.read_excel(gsma_file, skiprows=2, sheet_name=2)
@@ -78,26 +78,19 @@ def main():
         new_values = []
         col_name = []
 
-        for user_per_bs in [1, 10, 100]:
-            for alpha in [0.01, 0.1, 1, 10]:
-                for beta in [0.01, 0.1, 1, 10]:
+        for user_per_bs in [20, 40, 60, 80, 100]:
+            for alpha in [0.2, 0.4, 0.6, 0.8, 1.0]:
+                for beta in [0.2, 0.4, 0.6, 0.8, 1.0]:
                     # calculate the imbalance index
-                    df_all['old'] = df_all['pop'] / (df_all['bs'] * user_per_bs)
-                    df_all.loc[(df_all['pop'] == 0) & (df_all['bs'] == 0), 'imbalance_index'] = 0.0
-                    inf_imbalance = df_all.loc[df_all['old'] == np.inf, 'pop'] / user_per_bs
-                    df_all.loc[df_all['old'] == np.inf, 'old'] = inf_imbalance.values
-                    old_index = df_all['old'].mean()
-
                     condition = 'rho_{:}_alpha_{:}_beta_{:}'.format(user_per_bs, alpha, beta)
                     col_name.append(condition)
                     df_all[condition] = imbalance_index(df_all['pop'], df_all['bs'], user_per_bs, alpha, beta)
                     new_index = df_all[condition].mean()
                     new_values.append(new_index)
 
-        tmp = list(itertools.chain([name, whole_name, gsma_index, inclusive_index, old_index, *new_values]))
-        # print(tmp)
+        tmp = list(itertools.chain([name, whole_name, gsma_index, inclusive_index, *new_values]))
         final_results.append(tmp)
-    header = ['Alpha_3', 'Country', 'GSMA_Index', 'Inclusive_Index', 'Old_Index'] + col_name
+    header = ['ISO Code', 'Country', 'GSMA_Index', 'Inclusive_Index'] + col_name
 
     df = pd.DataFrame(final_results, columns=header)
     df.to_csv(folder + 'final_index.csv', index=False)
