@@ -1,0 +1,22 @@
+name: imbalance_index_env
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - pip
+  - python=3.8
+  - numpy
+  - h5py
+  - scipy
+  - pandas
+  - geopandas
+  - geojson
+  - spatialpandas
+  - dask=2021.01.0
+  - pip:
+    - scikit-learn
+    - boto3
+    - xlrd
+    - mobile-codes
