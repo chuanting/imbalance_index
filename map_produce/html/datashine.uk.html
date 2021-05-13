@@ -1,0 +1,1615 @@
+<html lang="en" prefix="og: http://ogp.me/ns#" class="cye-disabled cye-lm">
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- Was IE=EmulateIE9 -->
+    <meta name="viewport" content="minimal-ui, initial-scale=0.5, user-scalable=no, width=device-width">
+    <title>DataShine: Census</title>
+
+    <link rel="stylesheet" type="text/css" media="all" href="js/openlayers/v5.3.0-dist/ol.css">
+    <link rel="stylesheet" type="text/css" media="all" href="style.css">
+    <link rel="stylesheet" type="text/css" media="all" href="css/cupertino/jquery-ui-1.10.4.custom.css">
+    <link rel="stylesheet" type="text/css" media="all"
+          href="https://fonts.googleapis.com/css?family=Cabin+Condensed:400,500">
+
+    <meta property="og:title" content="DataShine: Census">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://www.datashine.org.uk">
+    <meta property="og:description" content="The 2011 Census, mapped with context for England/Wales.">
+    <meta property="og:image" content="https://www.datashine.org.uk/images/thumbnail.png">
+    <meta property="og:site_name" content="DataShine: Census">
+    <meta property="fb:admins" content="507348039">
+    <meta property="fb:app_id" content="114474805306975">
+
+    <script src="https://connect.facebook.net/en_GB/all.js?hash=bd0907d60157b823c346245f780bbfa9&amp;ua=modern_es6"
+            async="" crossorigin="anonymous"></script>
+    <script id="facebook-jssdk" src="//connect.facebook.net/en_GB/all.js#xfbml=1&amp;appId=114474805306975"></script>
+    <script id="twitter-wjs" src="https://platform.twitter.com/widgets.js"></script>
+    <script async="" src="//www.google-analytics.com/analytics.js"></script>
+    <script type="text/javascript" src="js/proj4.js"></script>
+    <style id="nightModeStyle">
+        html.cye-enabled.cye-nm:not(*:-webkit-full-screen) body,
+        html.cye-enabled.cye-nm:not(*:-webkit-full-screen) #cye-workaround-body {
+            -webkit-filter: contrast(91%) brightness(84%) invert(1);
+        }</style>
+    <style id="cyebody">html.cye-enabled.cye-lm body {
+        background-color: #cce8cf !important;
+        border-color: rgb(51, 58, 51) !important;
+        background-image: none !important;
+        color: #000000 !important
+    }</style>
+    <style id="cyediv">html.cye-enabled.cye-lm div {
+        background-color: #cce8cf !important;
+        border-color: rgb(51, 58, 51) !important;
+        background-image: none !important;
+        color: #000000 !important
+    }</style>
+    <style id="cyetable">html.cye-enabled.cye-lm th {
+        background-color: #cce8cf !important;
+        border-color: rgb(51, 58, 51) !important;
+        background-image: none !important;
+        color: #000000 !important
+    }
+
+    html.cye-enabled.cye-lm td {
+        background-color: #cce8cf !important;
+        border-color: rgb(51, 58, 51) !important;
+        background-image: none !important;
+        color: #000000 !important
+    }</style>
+    <style id="cyetextInput">html.cye-enabled.cye-lm input[type=text] {
+        background-color: #cce8cf !important;
+        border-color: rgb(51, 58, 51) !important;
+        background-image: none !important;
+        color: #000000 !important
+    }
+
+    html.cye-enabled.cye-lm textarea {
+        background-color: #cce8cf !important;
+        border-color: rgb(51, 58, 51) !important;
+        background-image: none !important;
+        color: #000000 !important
+    }</style>
+    <style id="cyeselect">html.cye-enabled.cye-lm select {
+        background-color: #cce8cf !important;
+        border-color: rgb(51, 58, 51) !important;
+        background-image: none !important;
+        color: #000000 !important
+    }</style>
+    <style id="cyeul">html.cye-enabled.cye-lm ul {
+        background-color: #cce8cf !important;
+        border-color: rgb(51, 58, 51) !important;
+        background-image: none !important;
+        color: #000000 !important
+    }</style>
+    <style id="cyeChangeByClick">html.cye-enabled.cye-lm .cye-lm-tag, html.cye-enabled.cye-lm.cye-lm-tag {
+        background-color: #cce8cf !important;
+        border-color: rgb(51, 58, 51) !important;
+        background-image: none !important;
+        color: #000000 !important
+    }</style>
+    <script type="text/javascript" src="js/openlayers/v5.3.0-dist/ol.js"></script>
+    <script type="text/javascript" src="js/jquery-1.12.0.min.js"></script>
+    <script type="text/javascript" src="js/jquery-ui-1.10.4ui/jquery-ui.js"></script>
+    <script type="text/javascript" src="js/colorbrewer.js"></script>
+
+    <!-- First six can have js/ substituted for http://casa.oobrien.com/openlayers/ to share load, if necessary -->
+
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+            a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+        ga('create', 'UA-51799236-1', 'datashine.org.uk');
+        ga('send', 'pageview');
+
+    </script>
+
+    <script>!function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0], p = /^http:/.test(d.location) ? 'http' : 'https';
+        if (!d.getElementById(id)) {
+            js = d.createElement(s);
+            js.id = id;
+            js.src = p + '://platform.twitter.com/widgets.js';
+            fjs.parentNode.insertBefore(js, fjs);
+        }
+    }(document, 'script', 'twitter-wjs');</script>
+
+    <script type="text/javascript" src="main_ol3.js"></script>
+
+    <input type="hidden" id="_w_tusk">
+    <script type="text/javascript"
+            src="chrome-extension://dbjbempljhcmhlfpfacalomonjpalpko/scripts/inspector.js"></script>
+    <script charset="utf-8" src="https://platform.twitter.com/js/button.5573c974dc31bbdab5ea7923a0bd5cf3.js"></script>
+    <style type="text/css"
+           data-fbcssmodules="css:fb.css.base css:fb.css.dialog css:fb.css.iframewidget css:fb.css.customer_chat_plugin_iframe">.fb_hidden {
+        position: absolute;
+        top: -10000px;
+        z-index: 10001
+    }
+
+    .fb_reposition {
+        overflow: hidden;
+        position: relative
+    }
+
+    .fb_invisible {
+        display: none
+    }
+
+    .fb_reset {
+        background: none;
+        border: 0;
+        border-spacing: 0;
+        color: #000;
+        cursor: auto;
+        direction: ltr;
+        font-family: "lucida grande", tahoma, verdana, arial, sans-serif;
+        font-size: 11px;
+        font-style: normal;
+        font-variant: normal;
+        font-weight: normal;
+        letter-spacing: normal;
+        line-height: 1;
+        margin: 0;
+        overflow: visible;
+        padding: 0;
+        text-align: left;
+        text-decoration: none;
+        text-indent: 0;
+        text-shadow: none;
+        text-transform: none;
+        visibility: visible;
+        white-space: normal;
+        word-spacing: normal
+    }
+
+    .fb_reset > div {
+        overflow: hidden
+    }
+
+    @keyframes fb_transform {
+        from {
+            opacity: 0;
+            transform: scale(.95)
+        }
+        to {
+            opacity: 1;
+            transform: scale(1)
+        }
+    }
+
+    .fb_animate {
+        animation: fb_transform .3s forwards
+    }
+
+    .fb_dialog {
+        background: rgba(82, 82, 82, .7);
+        position: absolute;
+        top: -10000px;
+        z-index: 10001
+    }
+
+    .fb_dialog_advanced {
+        border-radius: 8px;
+        padding: 10px
+    }
+
+    .fb_dialog_content {
+        background: #fff;
+        color: #373737
+    }
+
+    .fb_dialog_close_icon {
+        background: url(https://static.xx.fbcdn.net/rsrc.php/v3/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 0 transparent;
+        cursor: pointer;
+        display: block;
+        height: 15px;
+        position: absolute;
+        right: 18px;
+        top: 17px;
+        width: 15px
+    }
+
+    .fb_dialog_mobile .fb_dialog_close_icon {
+        left: 5px;
+        right: auto;
+        top: 5px
+    }
+
+    .fb_dialog_padding {
+        background-color: transparent;
+        position: absolute;
+        width: 1px;
+        z-index: -1
+    }
+
+    .fb_dialog_close_icon:hover {
+        background: url(https://static.xx.fbcdn.net/rsrc.php/v3/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 -15px transparent
+    }
+
+    .fb_dialog_close_icon:active {
+        background: url(https://static.xx.fbcdn.net/rsrc.php/v3/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 -30px transparent
+    }
+
+    .fb_dialog_iframe {
+        line-height: 0
+    }
+
+    .fb_dialog_content .dialog_title {
+        background: #6d84b4;
+        border: 1px solid #365899;
+        color: #fff;
+        font-size: 14px;
+        font-weight: bold;
+        margin: 0
+    }
+
+    .fb_dialog_content .dialog_title > span {
+        background: url(https://static.xx.fbcdn.net/rsrc.php/v3/yd/r/Cou7n-nqK52.gif) no-repeat 5px 50%;
+        float: left;
+        padding: 5px 0 7px 26px
+    }
+
+    body.fb_hidden {
+        height: 100%;
+        left: 0;
+        margin: 0;
+        overflow: visible;
+        position: absolute;
+        top: -10000px;
+        transform: none;
+        width: 100%
+    }
+
+    .fb_dialog.fb_dialog_mobile.loading {
+        background: url(https://static.xx.fbcdn.net/rsrc.php/v3/ya/r/3rhSv5V8j3o.gif) white no-repeat 50% 50%;
+        min-height: 100%;
+        min-width: 100%;
+        overflow: hidden;
+        position: absolute;
+        top: 0;
+        z-index: 10001
+    }
+
+    .fb_dialog.fb_dialog_mobile.loading.centered {
+        background: none;
+        height: auto;
+        min-height: initial;
+        min-width: initial;
+        width: auto
+    }
+
+    .fb_dialog.fb_dialog_mobile.loading.centered #fb_dialog_loader_spinner {
+        width: 100%
+    }
+
+    .fb_dialog.fb_dialog_mobile.loading.centered .fb_dialog_content {
+        background: none
+    }
+
+    .loading.centered #fb_dialog_loader_close {
+        clear: both;
+        color: #fff;
+        display: block;
+        font-size: 18px;
+        padding-top: 20px
+    }
+
+    #fb-root #fb_dialog_ipad_overlay {
+        background: rgba(0, 0, 0, .4);
+        bottom: 0;
+        left: 0;
+        min-height: 100%;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 100%;
+        z-index: 10000
+    }
+
+    #fb-root #fb_dialog_ipad_overlay.hidden {
+        display: none
+    }
+
+    .fb_dialog.fb_dialog_mobile.loading iframe {
+        visibility: hidden
+    }
+
+    .fb_dialog_mobile .fb_dialog_iframe {
+        position: sticky;
+        top: 0
+    }
+
+    .fb_dialog_content .dialog_header {
+        background: linear-gradient(from(#738aba), to(#2c4987));
+        border-bottom: 1px solid;
+        border-color: #043b87;
+        box-shadow: white 0 1px 1px -1px inset;
+        color: #fff;
+        font: bold 14px Helvetica, sans-serif;
+        text-overflow: ellipsis;
+        text-shadow: rgba(0, 30, 84, .296875) 0 -1px 0;
+        vertical-align: middle;
+        white-space: nowrap
+    }
+
+    .fb_dialog_content .dialog_header table {
+        height: 43px;
+        width: 100%
+    }
+
+    .fb_dialog_content .dialog_header td.header_left {
+        font-size: 12px;
+        padding-left: 5px;
+        vertical-align: middle;
+        width: 60px
+    }
+
+    .fb_dialog_content .dialog_header td.header_right {
+        font-size: 12px;
+        padding-right: 5px;
+        vertical-align: middle;
+        width: 60px
+    }
+
+    .fb_dialog_content .touchable_button {
+        background: linear-gradient(from(#4267B2), to(#2a4887));
+        background-clip: padding-box;
+        border: 1px solid #29487d;
+        border-radius: 3px;
+        display: inline-block;
+        line-height: 18px;
+        margin-top: 3px;
+        max-width: 85px;
+        padding: 4px 12px;
+        position: relative
+    }
+
+    .fb_dialog_content .dialog_header .touchable_button input {
+        background: none;
+        border: none;
+        color: #fff;
+        font: bold 12px Helvetica, sans-serif;
+        margin: 2px -12px;
+        padding: 2px 6px 3px 6px;
+        text-shadow: rgba(0, 30, 84, .296875) 0 -1px 0
+    }
+
+    .fb_dialog_content .dialog_header .header_center {
+        color: #fff;
+        font-size: 16px;
+        font-weight: bold;
+        line-height: 18px;
+        text-align: center;
+        vertical-align: middle
+    }
+
+    .fb_dialog_content .dialog_content {
+        background: url(https://static.xx.fbcdn.net/rsrc.php/v3/y9/r/jKEcVPZFk-2.gif) no-repeat 50% 50%;
+        border: 1px solid #4a4a4a;
+        border-bottom: 0;
+        border-top: 0;
+        height: 150px
+    }
+
+    .fb_dialog_content .dialog_footer {
+        background: #f5f6f7;
+        border: 1px solid #4a4a4a;
+        border-top-color: #ccc;
+        height: 40px
+    }
+
+    #fb_dialog_loader_close {
+        float: left
+    }
+
+    .fb_dialog.fb_dialog_mobile .fb_dialog_close_icon {
+        visibility: hidden
+    }
+
+    #fb_dialog_loader_spinner {
+        animation: rotateSpinner 1.2s linear infinite;
+        background-color: transparent;
+        background-image: url(https://static.xx.fbcdn.net/rsrc.php/v3/yD/r/t-wz8gw1xG1.png);
+        background-position: 50% 50%;
+        background-repeat: no-repeat;
+        height: 24px;
+        width: 24px
+    }
+
+    @keyframes rotateSpinner {
+        0% {
+            transform: rotate(0deg)
+        }
+        100% {
+            transform: rotate(360deg)
+        }
+    }
+
+    .fb_iframe_widget {
+        display: inline-block;
+        position: relative
+    }
+
+    .fb_iframe_widget span {
+        display: inline-block;
+        position: relative;
+        text-align: justify
+    }
+
+    .fb_iframe_widget iframe {
+        position: absolute
+    }
+
+    .fb_iframe_widget_fluid_desktop, .fb_iframe_widget_fluid_desktop span, .fb_iframe_widget_fluid_desktop iframe {
+        max-width: 100%
+    }
+
+    .fb_iframe_widget_fluid_desktop iframe {
+        min-width: 220px;
+        position: relative
+    }
+
+    .fb_iframe_widget_lift {
+        z-index: 1
+    }
+
+    .fb_iframe_widget_fluid {
+        display: inline
+    }
+
+    .fb_iframe_widget_fluid span {
+        width: 100%
+    }
+
+    .fb_mpn_mobile_landing_page_slide_out {
+        animation-duration: 200ms;
+        animation-name: fb_mpn_landing_page_slide_out;
+        transition-timing-function: ease-in
+    }
+
+    .fb_mpn_mobile_landing_page_slide_out_from_left {
+        animation-duration: 200ms;
+        animation-name: fb_mpn_landing_page_slide_out_from_left;
+        transition-timing-function: ease-in
+    }
+
+    .fb_mpn_mobile_landing_page_slide_up {
+        animation-duration: 500ms;
+        animation-name: fb_mpn_landing_page_slide_up;
+        transition-timing-function: ease-in
+    }
+
+    .fb_mpn_mobile_bounce_in {
+        animation-duration: 300ms;
+        animation-name: fb_mpn_bounce_in;
+        transition-timing-function: ease-in
+    }
+
+    .fb_mpn_mobile_bounce_out {
+        animation-duration: 300ms;
+        animation-name: fb_mpn_bounce_out;
+        transition-timing-function: ease-in
+    }
+
+    .fb_mpn_mobile_bounce_out_v2 {
+        animation-duration: 300ms;
+        animation-name: fb_mpn_fade_out;
+        transition-timing-function: ease-in
+    }
+
+    .fb_customer_chat_bounce_in_v2 {
+        animation-duration: 300ms;
+        animation-name: fb_bounce_in_v2;
+        transition-timing-function: ease-in
+    }
+
+    .fb_customer_chat_bounce_in_from_left {
+        animation-duration: 300ms;
+        animation-name: fb_bounce_in_from_left;
+        transition-timing-function: ease-in
+    }
+
+    .fb_customer_chat_bounce_out_v2 {
+        animation-duration: 300ms;
+        animation-name: fb_bounce_out_v2;
+        transition-timing-function: ease-in
+    }
+
+    .fb_customer_chat_bounce_out_from_left {
+        animation-duration: 300ms;
+        animation-name: fb_bounce_out_from_left;
+        transition-timing-function: ease-in
+    }
+
+    .fb_customer_chat_bubble_animated_no_badge {
+        box-shadow: 0 3px 12px rgba(0, 0, 0, .15);
+        transition: box-shadow 150ms linear
+    }
+
+    .fb_customer_chat_bubble_animated_no_badge:hover {
+        box-shadow: 0 5px 24px rgba(0, 0, 0, .3)
+    }
+
+    .fb_customer_chat_bubble_animated_with_badge {
+        box-shadow: -5px 4px 14px rgba(0, 0, 0, .15);
+        transition: box-shadow 150ms linear
+    }
+
+    .fb_customer_chat_bubble_animated_with_badge:hover {
+        box-shadow: -5px 8px 24px rgba(0, 0, 0, .2)
+    }
+
+    .fb_invisible_flow {
+        display: inherit;
+        height: 0;
+        overflow-x: hidden;
+        width: 0
+    }
+
+    .fb_new_ui_mobile_overlay_active {
+        overflow: hidden
+    }
+
+    @keyframes fb_mpn_landing_page_slide_in {
+        0% {
+            border-radius: 50%;
+            margin: 0 24px;
+            width: 60px
+        }
+        40% {
+            border-radius: 18px
+        }
+        100% {
+            margin: 0 12px;
+            width: 100% -24px
+        }
+    }
+
+    @keyframes fb_mpn_landing_page_slide_in_from_left {
+        0% {
+            border-radius: 50%;
+            left: 12px;
+            margin: 0 24px;
+            width: 60px
+        }
+        40% {
+            border-radius: 18px
+        }
+        100% {
+            left: 12px;
+            margin: 0 12px;
+            width: 100% -24px
+        }
+    }
+
+    @keyframes fb_mpn_landing_page_slide_out {
+        0% {
+            margin: 0 12px;
+            width: 100% -24px
+        }
+        60% {
+            border-radius: 18px
+        }
+        100% {
+            border-radius: 50%;
+            margin: 0 24px;
+            width: 60px
+        }
+    }
+
+    @keyframes fb_mpn_landing_page_slide_out_from_left {
+        0% {
+            left: 12px;
+            width: 100% -24px
+        }
+        60% {
+            border-radius: 18px
+        }
+        100% {
+            border-radius: 50%;
+            left: 12px;
+            width: 60px
+        }
+    }
+
+    @keyframes fb_mpn_landing_page_slide_up {
+        0% {
+            bottom: 0;
+            opacity: 0
+        }
+        100% {
+            bottom: 24px;
+            opacity: 1
+        }
+    }
+
+    @keyframes fb_mpn_bounce_in {
+        0% {
+            opacity: .5;
+            top: 100%
+        }
+        100% {
+            opacity: 1;
+            top: 0
+        }
+    }
+
+    @keyframes fb_mpn_fade_out {
+        0% {
+            bottom: 30px;
+            opacity: 1
+        }
+        100% {
+            bottom: 0;
+            opacity: 0
+        }
+    }
+
+    @keyframes fb_mpn_bounce_out {
+        0% {
+            opacity: 1;
+            top: 0
+        }
+        100% {
+            opacity: .5;
+            top: 100%
+        }
+    }
+
+    @keyframes fb_bounce_in_v2 {
+        0% {
+            opacity: 0;
+            transform: scale(0, 0);
+            transform-origin: bottom right
+        }
+        50% {
+            transform: scale(1.03, 1.03);
+            transform-origin: bottom right
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1, 1);
+            transform-origin: bottom right
+        }
+    }
+
+    @keyframes fb_bounce_in_from_left {
+        0% {
+            opacity: 0;
+            transform: scale(0, 0);
+            transform-origin: bottom left
+        }
+        50% {
+            transform: scale(1.03, 1.03);
+            transform-origin: bottom left
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1, 1);
+            transform-origin: bottom left
+        }
+    }
+
+    @keyframes fb_bounce_out_v2 {
+        0% {
+            opacity: 1;
+            transform: scale(1, 1);
+            transform-origin: bottom right
+        }
+        100% {
+            opacity: 0;
+            transform: scale(0, 0);
+            transform-origin: bottom right
+        }
+    }
+
+    @keyframes fb_bounce_out_from_left {
+        0% {
+            opacity: 1;
+            transform: scale(1, 1);
+            transform-origin: bottom left
+        }
+        100% {
+            opacity: 0;
+            transform: scale(0, 0);
+            transform-origin: bottom left
+        }
+    }
+
+    @keyframes fb_bounce_out_v2_mobile_chat_started {
+        0% {
+            opacity: 1;
+            top: 0
+        }
+        100% {
+            opacity: 0;
+            top: 20px
+        }
+    }
+
+    @keyframes fb_customer_chat_bubble_bounce_in_animation {
+        0% {
+            bottom: 6pt;
+            opacity: 0;
+            transform: scale(0, 0);
+            transform-origin: center
+        }
+        70% {
+            bottom: 18pt;
+            opacity: 1;
+            transform: scale(1.2, 1.2)
+        }
+        100% {
+            transform: scale(1, 1)
+        }
+    }
+
+    @keyframes slideInFromBottom {
+        0% {
+            opacity: .1;
+            transform: translateY(100%)
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0)
+        }
+    }
+
+    @keyframes slideInFromBottomDelay {
+        0% {
+            opacity: 0;
+            transform: translateY(100%)
+        }
+        97% {
+            opacity: 0;
+            transform: translateY(100%)
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0)
+        }
+    }</style>
+</head>
+<div id="cyeBlackMaskLayer"
+     style="background-color: rgb(19, 19, 19); position: fixed; width: 1980px; height: 1080px; z-index: -2147483648;"></div>
+<body data-new-gr-c-s-check-loaded="14.1010.0" data-gr-ext-installed="" style="">
+<div id="fb-root" class=" fb_reset">
+    <div style="position: absolute; top: -10000px; width: 0px; height: 0px;">
+        <div></div>
+    </div>
+</div>
+<script>(function (d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s);
+    js.id = id;
+    js.src = "//connect.facebook.net/en_GB/all.js#xfbml=1&appId=114474805306975";
+    fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<div id="mapcontainer" class="ui-droppable">
+
+    <div class="ol-viewport" data-view="18"
+         style="position: relative; overflow: hidden; width: 100%; height: 100%; touch-action: none;">
+        <canvas class="ol-unselectable" style="width: 100%; height: 100%; display: block;" width="2169"
+                height="1862"></canvas>
+        <div class="ol-overlaycontainer"></div>
+        <div class="ol-overlaycontainer-stopevent">
+            <div class="ol-overlay-container ol-selectable" style="position: absolute; display: none;">
+                <div id="popup" class="ol-popup">
+                    <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+                    <div id="popup-content"></div>
+                </div>
+            </div>
+            <div class="ol-zoom ol-unselectable ol-control">
+                <button class="ol-zoom-in" type="button" title="Zoom in">+</button>
+                <button class="ol-zoom-out" type="button" title="Zoom out">−</button>
+            </div>
+            <div class="ol-rotate ol-unselectable ol-control ol-hidden">
+                <button class="ol-rotate-reset" type="button" title="Reset rotation"><span class="ol-compass"
+                                                                                           style="transform: rotate(0rad);">⇧</span>
+                </button>
+            </div>
+            <div class="ol-attribution ol-unselectable ol-control ol-collapsed">
+                <ul>
+                    <li>© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.</li>
+                    <li><br>Census data: National Statistics, licensed under the Open Government Licence v.3.0.<br></li>
+                    <li>DataShine was created by Oliver O'Brien and James Cheshire at UCL CASA/UCL Geography.<br></li>
+                    <li>Placenames/buildings: Ordnance Survey © Crown copyright and database right 2011-4.</li>
+                </ul>
+                <button type="button" title="Attributions"><span>i</span></button>
+            </div>
+            <div class="ol-scale-line ol-unselectable">
+                <div class="ol-scale-line-inner" style="width: 83px;">1000 m</div>
+            </div>
+            <div class="ol-zoomslider ol-unselectable ol-control">
+                <button type="button" class="ol-zoomslider-thumb ol-unselectable" style="top: 32px;"></button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="titlepanel" class="draggable ui-widget-content ui-draggable">
+    <div id="toptitle">
+        <img src="images/1_22.png" alt="Shine">
+        <span style="color: #fff;">DataShine</span>
+        <span style="color: #5bf;">Census</span>
+    </div>
+    <div style="padding: 10px;">
+        <div style="font-size: 16px; text-align: center;">The 2011 Census, mapped with context</div>
+        <div style="text-align: center;">
+            Using <a
+                href="https://www.ons.gov.uk/ons/rel/census/2011-census/key-statistics-and-quick-statistics-for-local-authorities-in-the-united-kingdom---part-1/stb-key-statistics-for-local-authorities-in-the-uk.html">ONS
+            Quick Statistics data</a> for England &amp; Wales.<br>
+            Also available for <a href="https://scotland.datashine.org.uk/" style="color:#0a5b7c">Scotland</a>.
+            <!-- An output of the BODMAS project.<br />
+            <i>Mining &amp; synthesising big open datasets for insights.</i> -->
+        </div>
+        <div style="font-size: 10px; text-align: center; margin-top: 8px;">
+            <button id="aboutButton" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                    role="button" aria-disabled="false"><span class="ui-button-text">About</span></button>
+            <button id="commentsButton" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                    role="button" aria-disabled="false"><span class="ui-button-text">Comments?</span></button>
+            <button id="goHome" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                    role="button" aria-disabled="false"><span class="ui-button-text">Reset view</span></button>
+            <br>
+            <button id="mailinglistButton" style="margin-top: 5px"
+                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                    aria-disabled="false"><span class="ui-button-text">Sign up for announcements</span></button>
+        </div>
+        <div id="social">
+            <table>
+                <tbody>
+                <tr>
+                    <td>
+                        <div class="fb-like fb_iframe_widget" data-href="https://www.datashine.org.uk/"
+                             data-send="false" data-layout="button_count" data-width="150" data-show-faces="false"
+                             data-share="true" fb-xfbml-state="rendered"
+                             fb-iframe-plugin-query="app_id=114474805306975&amp;container_width=0&amp;href=https%3A%2F%2Fwww.datashine.org.uk%2F&amp;layout=button_count&amp;locale=en_GB&amp;sdk=joey&amp;send=false&amp;share=true&amp;show_faces=false&amp;width=150">
+                            <span style="vertical-align: bottom; width: 150px; height: 28px;"><iframe
+                                    name="f151b208da9a4d4" width="150px" height="1000px"
+                                    data-testid="fb:like Facebook Social Plugin" title="fb:like Facebook Social Plugin"
+                                    frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no"
+                                    allow="encrypted-media"
+                                    src="https://www.facebook.com/plugins/like.php?app_id=114474805306975&amp;channel=https%3A%2F%2Fstaticxx.facebook.com%2Fx%2Fconnect%2Fxd_arbiter%2F%3Fversion%3D46%23cb%3Df29047bedbf5e68%26domain%3Ddatashine.org.uk%26origin%3Dhttps%253A%252F%252Fdatashine.org.uk%252Ff25105bdc8665f8%26relation%3Dparent.parent&amp;container_width=0&amp;href=https%3A%2F%2Fwww.datashine.org.uk%2F&amp;layout=button_count&amp;locale=en_GB&amp;sdk=joey&amp;send=false&amp;share=true&amp;show_faces=false&amp;width=150"
+                                    style="border: none; visibility: visible; width: 150px; height: 28px;"
+                                    class=""></iframe></span></div>
+                    </td>
+                    <td id="tweet-span">
+                        <iframe id="twitter-widget-4" scrolling="no" frameborder="0" allowtransparency="true"
+                                allowfullscreen="true"
+                                class="twitter-share-button twitter-share-button-rendered twitter-tweet-button"
+                                style="position: static; visibility: visible; width: 61px; height: 20px;"
+                                title="Twitter Tweet Button"
+                                src="https://platform.twitter.com/widgets/tweet_button.06c6ee58c3810956b7509218508c7b56.en.html#dnt=true&amp;hashtags=census&amp;id=twitter-widget-4&amp;lang=en&amp;original_referer=https%3A%2F%2Fdatashine.org.uk%2F%23table%3DQS103EW%26col%3DQS103EW0095%26ramp%3DYlOrRd%26layers%3DBTTT%26zoom%3D14%26lon%3D-0.1500%26lat%3D50.8300&amp;related=oobr%2Ccasaucl&amp;size=m&amp;text=DataShine%3A%20Census&amp;time=1620645285794&amp;type=share&amp;url=https%3A%2F%2Fdatashine.org.uk%2F%23table%3DQS103EW%26col%3DQS103EW0095%26ramp%3DYlOrRd%26layers%3DBTTT%26zoom%3D14%26lon%3D-0.1500%26lat%3D50.8300&amp;via=spatialanalysis"
+                                data-url="https://datashine.org.uk/#table=QS103EW&amp;col=QS103EW0095&amp;ramp=YlOrRd&amp;layers=BTTT&amp;zoom=14&amp;lon=-0.1500&amp;lat=50.8300"></iframe>
+
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div id="debugpanel" class="draggable ui-widget-content uipanel ui-draggable">
+    <div class="paneltitle">Direct Tile Specification Facility (Debug)</div>
+    <table>
+        <tbody>
+        <tr>
+            <td>Debug</td>
+            <td>
+                <input type="text" id="debugval" value="" style="width: 750px">
+            </td>
+            <td>
+                <button id="debugMapButton" onclick="setDataLayers()" style="font-size: 24px;"
+                        class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                        aria-disabled="false"><span class="ui-button-text">Map!</span></button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="controlpanel"
+     class="draggable ui-corner-all ui-widget-content uipanel ui-accordion ui-widget ui-helper-reset ui-draggable"
+     role="tablist">
+    <h3 class="ui-accordion-header ui-helper-reset ui-state-default ui-accordion-header-active ui-state-active ui-corner-top ui-accordion-icons"
+        role="tab" id="ui-accordion-controlpanel-header-0" aria-controls="controlpanelcontent" aria-selected="true"
+        aria-expanded="true" tabindex="0"><span class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-s"></span>Data
+        Chooser</h3>
+    <div id="controlpanelcontent"
+         class="ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion-content-active"
+         aria-labelledby="ui-accordion-controlpanel-header-0" role="tabpanel" aria-hidden="false"
+         style="display: block;">
+        <div id="topiclist" class="controlpaneloption">1
+            <div id="topicbuttons" class="ui-buttonset"><input type="radio" id="radioQS1" name="radio"
+                                                               class="ui-helper-hidden-accessible"><label for="radioQS1"
+                                                                                                          class="ui-button ui-widget ui-state-default ui-button-text-only ui-corner-left ui-state-active"
+                                                                                                          role="button"
+                                                                                                          aria-disabled="false"
+                                                                                                          aria-pressed="true"><span
+                    class="ui-button-text">Population<br>Basics</span></label><input type="radio" id="radioQS2"
+                                                                                     name="radio"
+                                                                                     class="ui-helper-hidden-accessible"><label
+                    for="radioQS2" class="ui-button ui-widget ui-state-default ui-button-text-only" role="button"
+                    aria-disabled="false" aria-pressed="false"><span
+                    class="ui-button-text">Origins<br>&amp; Beliefs</span></label><input type="radio" id="radioQS3"
+                                                                                         name="radio"
+                                                                                         class="ui-helper-hidden-accessible"><label
+                    for="radioQS3" class="ui-button ui-widget ui-state-default ui-button-text-only" role="button"
+                    aria-disabled="false" aria-pressed="false"><span
+                    class="ui-button-text">Health<br>&nbsp;</span></label><input type="radio" id="radioQS4" name="radio"
+                                                                                 class="ui-helper-hidden-accessible"><label
+                    for="radioQS4" class="ui-button ui-widget ui-state-default ui-button-text-only" role="button"
+                    aria-disabled="false" aria-pressed="false"><span
+                    class="ui-button-text">Housing<br>&nbsp;</span></label><input type="radio" id="radioQS5"
+                                                                                  name="radio"
+                                                                                  class="ui-helper-hidden-accessible"><label
+                    for="radioQS5" class="ui-button ui-widget ui-state-default ui-button-text-only" role="button"
+                    aria-disabled="false" aria-pressed="false"><span
+                    class="ui-button-text">Education<br>&nbsp;</span></label><input type="radio" id="radioQS6"
+                                                                                    name="radio"
+                                                                                    class="ui-helper-hidden-accessible"><label
+                    for="radioQS6" class="ui-button ui-widget ui-state-default ui-button-text-only" role="button"
+                    aria-disabled="false" aria-pressed="false"><span
+                    class="ui-button-text">Employ-<br>ment</span></label><input type="radio" id="radioQS7" name="radio"
+                                                                                class="ui-helper-hidden-accessible"><label
+                    for="radioQS7" class="ui-button ui-widget ui-state-default ui-button-text-only" role="button"
+                    aria-disabled="false" aria-pressed="false"><span
+                    class="ui-button-text">Travel<br>to Work</span></label><input type="radio" id="radioQS8"
+                                                                                  name="radio"
+                                                                                  class="ui-helper-hidden-accessible"><label
+                    for="radioQS8" class="ui-button ui-widget ui-state-default ui-button-text-only" role="button"
+                    aria-disabled="false" aria-pressed="false"><span
+                    class="ui-button-text">Residency<br>&nbsp;</span></label><input type="radio" id="radioOAC"
+                                                                                    name="radio"
+                                                                                    class="ui-helper-hidden-accessible"><label
+                    for="radioOAC" class="ui-button ui-widget ui-state-default ui-button-text-only ui-corner-right"
+                    role="button" aria-disabled="false" aria-pressed="false"><span class="ui-button-text">OAC<br>Variables</span></label>
+            </div>
+        </div>
+        <div id="tablelist" class="controlpaneloption">2
+            <select id="tableselect" onchange="setCols()" class="ui-widget select">
+                <option value="QS101EW">Residence type</option>
+                <option value="QS103EW">Age by single year</option>
+                <option value="QS104EW">Sex</option>
+                <option value="QS105EW">Schoolchildren and full-time students at their non term-time address</option>
+                <option value="QS106EW" selected="selected">Second address</option>
+                <option value="QS108EW">Living arrangements</option>
+                <option value="QS110EW">Adult lifestage (alternative adult definition)</option>
+                <option value="QS111EW">Household lifestage</option>
+                <option value="QS112EW">Household composition - People</option>
+                <option value="QS113EW">Household composition - Households</option>
+                <option value="QS114EW">Household composition (alternative child and adult definitions) - People
+                </option>
+                <option value="QS115EW">Household composition (alternative child and adult definitions) - Households
+                </option>
+                <option value="QS116EW">Household type</option>
+                <option value="QS117EW">People aged 18 to 64 living in a one adult household</option>
+                <option value="QS118EW">Families with dependent children</option>
+                <option value="QS119EW">Households by deprivation dimensions</option>
+            </select>
+        </div>
+        <div id="tablequal" class="qual" title="QS103EW">All usual residents. <a target="_new"
+                                                                                 href="https://www.nomisweb.co.uk/census/2011/QS103EW">More
+            information and data download from NOMIS.</a></div>
+        <div id="collist" class="controlpaneloption">3
+            <select id="colselect" onchange="setSubCols()">
+                <option value="QS103EW0002">Age under 1</option>
+                <option value="QS103EW0003">Age 1</option>
+                <option value="QS103EW0004">Age 2</option>
+                <option value="QS103EW0005">Age 3</option>
+                <option value="QS103EW0006">Age 4</option>
+                <option value="QS103EW0007">Age 5</option>
+                <option value="QS103EW0008">Age 6</option>
+                <option value="QS103EW0009">Age 7</option>
+                <option value="QS103EW0010">Age 8</option>
+                <option value="QS103EW0011">Age 9</option>
+                <option value="QS103EW0012">Age 10</option>
+                <option value="QS103EW0013">Age 11</option>
+                <option value="QS103EW0014">Age 12</option>
+                <option value="QS103EW0015">Age 13</option>
+                <option value="QS103EW0016">Age 14</option>
+                <option value="QS103EW0017">Age 15</option>
+                <option value="QS103EW0018">Age 16</option>
+                <option value="QS103EW0019">Age 17</option>
+                <option value="QS103EW0020">Age 18</option>
+                <option value="QS103EW0021">Age 19</option>
+                <option value="QS103EW0022">Age 20</option>
+                <option value="QS103EW0023">Age 21</option>
+                <option value="QS103EW0024">Age 22</option>
+                <option value="QS103EW0025">Age 23</option>
+                <option value="QS103EW0026">Age 24</option>
+                <option value="QS103EW0027">Age 25</option>
+                <option value="QS103EW0028">Age 26</option>
+                <option value="QS103EW0029">Age 27</option>
+                <option value="QS103EW0030">Age 28</option>
+                <option value="QS103EW0031">Age 29</option>
+                <option value="QS103EW0032">Age 30</option>
+                <option value="QS103EW0033">Age 31</option>
+                <option value="QS103EW0034">Age 32</option>
+                <option value="QS103EW0035">Age 33</option>
+                <option value="QS103EW0036">Age 34</option>
+                <option value="QS103EW0037">Age 35</option>
+                <option value="QS103EW0038">Age 36</option>
+                <option value="QS103EW0039">Age 37</option>
+                <option value="QS103EW0040">Age 38</option>
+                <option value="QS103EW0041">Age 39</option>
+                <option value="QS103EW0042">Age 40</option>
+                <option value="QS103EW0043">Age 41</option>
+                <option value="QS103EW0044">Age 42</option>
+                <option value="QS103EW0045">Age 43</option>
+                <option value="QS103EW0046">Age 44</option>
+                <option value="QS103EW0047">Age 45</option>
+                <option value="QS103EW0048">Age 46</option>
+                <option value="QS103EW0049">Age 47</option>
+                <option value="QS103EW0050">Age 48</option>
+                <option value="QS103EW0051">Age 49</option>
+                <option value="QS103EW0052">Age 50</option>
+                <option value="QS103EW0053">Age 51</option>
+                <option value="QS103EW0054">Age 52</option>
+                <option value="QS103EW0055">Age 53</option>
+                <option value="QS103EW0056">Age 54</option>
+                <option value="QS103EW0057">Age 55</option>
+                <option value="QS103EW0058">Age 56</option>
+                <option value="QS103EW0059">Age 57</option>
+                <option value="QS103EW0060">Age 58</option>
+                <option value="QS103EW0061">Age 59</option>
+                <option value="QS103EW0062">Age 60</option>
+                <option value="QS103EW0063">Age 61</option>
+                <option value="QS103EW0064">Age 62</option>
+                <option value="QS103EW0065">Age 63</option>
+                <option value="QS103EW0066">Age 64</option>
+                <option value="QS103EW0067">Age 65</option>
+                <option value="QS103EW0068">Age 66</option>
+                <option value="QS103EW0069">Age 67</option>
+                <option value="QS103EW0070">Age 68</option>
+                <option value="QS103EW0071">Age 69</option>
+                <option value="QS103EW0072">Age 70</option>
+                <option value="QS103EW0073">Age 71</option>
+                <option value="QS103EW0074">Age 72</option>
+                <option value="QS103EW0075">Age 73</option>
+                <option value="QS103EW0076">Age 74</option>
+                <option value="QS103EW0077">Age 75</option>
+                <option value="QS103EW0078">Age 76</option>
+                <option value="QS103EW0079">Age 77</option>
+                <option value="QS103EW0080">Age 78</option>
+                <option value="QS103EW0081">Age 79</option>
+                <option value="QS103EW0082">Age 80</option>
+                <option value="QS103EW0083">Age 81</option>
+                <option value="QS103EW0084">Age 82</option>
+                <option value="QS103EW0085">Age 83</option>
+                <option value="QS103EW0086">Age 84</option>
+                <option value="QS103EW0087">Age 85</option>
+                <option value="QS103EW0088">Age 86</option>
+                <option value="QS103EW0089">Age 87</option>
+                <option value="QS103EW0090">Age 88</option>
+                <option value="QS103EW0091">Age 89</option>
+                <option value="QS103EW0092">Age 90</option>
+                <option value="QS103EW0093">Age 91</option>
+                <option value="QS103EW0094">Age 92</option>
+                <option value="QS103EW0095">Age 93</option>
+                <option value="QS103EW0096">Age 94</option>
+                <option value="QS103EW0097">Age 95</option>
+                <option value="QS103EW0098">Age 96</option>
+                <option value="QS103EW0099">Age 97</option>
+                <option value="QS103EW0100">Age 98</option>
+                <option value="QS103EW0101">Age 99</option>
+                <option value="QS103EW0102">Age 100 and over</option>
+            </select>
+        </div>
+        <div id="subcollist" class="controlpaneloption" style="display: none;">4
+            <select id="subcolselect" onchange="setColQualAndTileNames()"></select>
+        </div>
+        <div id="colqual" class="qual" title="QS103EW0095">Count, Person. OA average: 0.07% (standard deviation:
+            0.20%).
+        </div>
+        <div id="special" style="font-size: 16px; padding: 5px 5px 0 0;"></div>
+    </div>
+</div>
+
+<div id="infopanel"
+     class="draggable ui-corner-all ui-widget-content uipanel ui-accordion ui-widget ui-helper-reset ui-draggable"
+     role="tablist">
+    <h3 class="ui-accordion-header ui-helper-reset ui-state-default ui-accordion-header-active ui-state-active ui-corner-top ui-accordion-icons"
+        role="tab" id="ui-accordion-infopanel-header-0" aria-controls="infopanelcontent" aria-selected="true"
+        aria-expanded="true" tabindex="0"><span class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-s"></span>Key
+    </h3>
+    <div id="infopanelcontent"
+         class="ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom ui-accordion-content-active"
+         aria-labelledby="ui-accordion-infopanel-header-0" role="tabpanel" aria-hidden="false" style="display: block;">
+        <div id="colpanel">
+            <div style="font-size: 24px;">Age by single year</div>
+            <div style="font-size: 14px;">Age 93</div>
+        </div>
+        <div id="lockpanel">
+            <button id="buttonLock" onclick="lockKey()"
+                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                    aria-disabled="false"><span class="ui-button-text">Lock key</span></button>
+            <button id="buttonRelease" onclick="releaseKey()"
+                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only ui-button-disabled ui-state-disabled"
+                    role="button" aria-disabled="true" disabled=""><span class="ui-button-text">Reset</span></button>
+            <button id="buttonSpace" onclick="spaceKey()"
+                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                    aria-disabled="false"><span class="ui-button-text">Space equally</span></button>
+            <br>
+            <button id="buttonRecalc" onclick="recalcKey()"
+                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                    aria-disabled="false"><span class="ui-button-text">Rescale for current view</span></button>
+        </div>
+        <div id="keypanel">
+            <div id="keylqs">
+                <div class="keynumber">0 LQ</div>
+                <div class="keynumber">Average</div>
+                <div class="keynumber">2.0 LQ</div>
+                <div class="keynumber">3.0 LQ</div>
+                <div class="keynumber">4.0 LQ</div>
+                <div class="keynumber">5.0 LQ</div>
+                <div class="keynumber">6.0 LQ</div>
+                <div class="keynumber">7.0 LQ</div>
+            </div>
+            <div id="keyitems">
+                <div id="key1" class="keyitem" style="background-color: #ffffcc; color: #000000;"></div>
+                <div id="key2" class="keyitem" style="background-color: #ffeda0; color: #000000;"></div>
+                <div id="key3" class="keyitem" style="background-color: #fed976; color: #000000;"></div>
+                <div id="key4" class="keyitem" style="background-color: #feb24c; color: #000000;"></div>
+                <div id="key5" class="keyitem" style="background-color: #fd8d3c; color: #000000;">0.4%</div>
+                <div id="key6" class="keyitem" style="background-color: #fc4e2a; color: #000000;"></div>
+                <div id="key7" class="keyitem" style="background-color: #e31a1c; color: #000000;"></div>
+                <div id="key8" class="keyitem" style="background-color: #b10026; color: #ffffff;"></div>
+            </div>
+            <div id="keynumbers">
+                <div class="keynumber">0%</div>
+                <div class="keynumber">0%</div>
+                <div class="keynumber">0.1%</div>
+                <div class="keynumber">0.2%</div>
+                <div class="keynumber">0.2%</div>
+                <div class="keynumber">0.3%</div>
+                <div class="keynumber">0.4%</div>
+                <div class="keynumber">0.5%</div>
+                <div class="keynumber">100%</div>
+            </div>
+        </div>
+        <div id="placepanel">
+            <div class="title">Kingston</div>
+            <div class="subtitle">Lewes, South East</div>
+            <div class="supplementary">Area code: E00106816.</div>
+        </div>
+        <div id="kmlinfopanel"></div>
+        <div style="clear: both; padding-bottom: 10px;"></div>
+    </div>
+</div>
+
+<div id="metapanel">
+    <table>
+        <tbody>
+        <tr>
+            <td colspan="3" style="text-align: center;">
+                To acknowledge DataShine (e.g. for screenshots, references etc), please cite the following publication:
+                <b>Oliver O'Brien &amp; James Cheshire (2016) Interactive mapping for large, open demographic data sets
+                    using familiar geographical features, Journal of Maps, 12:4, 676-683 DOI: <a
+                            href="http://dx.doi.org/10.1080/17445647.2015.1060183">10.1080/17445647.2015.1060183</a></b>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div id="postcodesearch">Postcode:
+                    <input id="postcode" type="text" size="6" maxlength="8">
+                    <button type="button" id="postcodeButton" onclick="jumpToPostcode();"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Go</span></button>
+                </div>
+            </td>
+            <td colspan="2">
+                <div id="cityjump">
+                    <button onclick="setLocation(52.49, -1.95,12)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Birmingham</span></button>
+                    <button onclick="setLocation(50.83, -0.15,14)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Brighton</span></button>
+                    <button onclick="setLocation(51.45, -2.57,13)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Bristol</span></button>
+                    <button onclick="setLocation(51.49, -3.17,13)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Cardiff</span></button>
+                    <button onclick="setLocation(53.8, -1.64,12)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Leeds</span></button>
+                    <button onclick="setLocation(53.4, -2.97,13)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Liverpool</span></button>
+                    <button onclick="setLocation(51.53, -0.13,12)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">London</span></button>
+                    <button onclick="setLocation(53.47, -2.23,12)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Manchester</span></button>
+                    <button onclick="setLocation(54.97, -1.58,12)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Newcastle</span></button>
+                    <button onclick="setLocation(50.38, -4.14,13)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text">Plymouth</span></button>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>Get:
+                <button id="mapPDF" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                        role="button" aria-disabled="false"><span class="ui-button-text">PDF map</span></button>
+                <!-- Can be temporarily disabled due to load by including  disabled='disabled' -->
+                <button id="mapData" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                        role="button" aria-disabled="false"><span class="ui-button-text">Data</span></button>
+            </td>
+            <td colspan="2">
+                <div id="colourramps">
+                    <button onclick="setColourRamp(&quot;RdYlGn&quot;)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text"><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#d73027;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#f46d43;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#fdae61;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#fee08b;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#d9ef8b;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#a6d96a;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#66bd63;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#1a9850;">&nbsp;</div> </span>
+                    </button>
+                    <button onclick="setColourRamp(&quot;YlOrRd&quot;)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text"><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#ffffcc;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#ffeda0;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#fed976;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#feb24c;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#fd8d3c;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#fc4e2a;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#e31a1c;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#b10026;">&nbsp;</div> </span>
+                    </button>
+                    <button onclick="setColourRamp(&quot;BuPu&quot;)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text"><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#f7fcfd;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#e0ecf4;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#bfd3e6;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#9ebcda;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#8c96c6;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#8c6bb1;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#88419d;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#6e016b;">&nbsp;</div> </span>
+                    </button>
+                    <button onclick="setColourRamp(&quot;PuRd&quot;)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text"><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#f7f4f9;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#e7e1ef;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#d4b9da;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#c994c7;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#df65b0;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#e7298a;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#ce1256;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#91003f;">&nbsp;</div> </span>
+                    </button>
+                    <button onclick="setColourRamp(&quot;YlOrBr&quot;)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text"><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#ffffe5;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#fff7bc;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#fee391;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#fec44f;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#fe9929;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#ec7014;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#cc4c02;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#8c2d04;">&nbsp;</div> </span>
+                    </button>
+                    <button onclick="setColourRamp(&quot;YlGnBu&quot;)"
+                            class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                            aria-disabled="false"><span class="ui-button-text"><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#ffffd9;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#edf8b1;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#c7e9b4;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#7fcdbb;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#41b6c4;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#1d91c0;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#225ea8;">&nbsp;</div><div
+                            style="float: left; width: 10px; height: 10px; margin-bottom: 5px; background-color:#0c2c84;">&nbsp;</div> </span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div style="float: left; margin: 3px 3px 0 0;">Toggle:</div>
+                <button id="overlayToggle"
+                        class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                        aria-disabled="false"><span class="ui-button-text">Houses</span></button>
+                <button id="labelToggle" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                        role="button" aria-disabled="false"><span class="ui-button-text">Labels</span></button>
+                <br>
+                <table style="border-width: 0; margin-top: 3px; padding: 0; border-spacing: 0;">
+                    <tbody>
+                    <tr>
+                        <td>Overlays:</td>
+                        <td>
+                            <button id="deleteKMLs"
+                                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only ui-button-disabled ui-state-disabled"
+                                    role="button" aria-disabled="true" disabled=""><span
+                                    class="ui-button-text">Clear</span></button>
+                        </td>
+                        <td>
+                            <div id="kmlSlider"
+                                 class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all ui-slider-disabled ui-state-disabled"
+                                 aria-disabled="true"><a class="ui-slider-handle ui-state-default ui-corner-all"
+                                                         href="#" style="left: 100%;"></a></div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </td>
+            <td>
+                <div id="metapanelcontent">
+
+                    LQ is the Location Quotient and describes how far from the national average (LQ = 1) the measure is.<br>
+                    Percentages are averages across local population, NOT relective of individual buildings.<br>
+                    Non-residential buildings on map are not included in calculations. Tip: You can drag-and-drop KMLs
+                    &amp; GeoJSONs.
+
+                </div>
+            </td>
+            <td id="sponsors">
+                <table>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <!-- <a href="http://www.casa.ucl.ac.uk/"><img src='http://casa.oobrien.com/openlayers/datashinetemp/casa40.png' alt='CASA' style='border-width: 0; height: 40px; width: 30px; vertical-align: middle; padding: 0 3px;'></a> -->
+                        </td>
+                        <td><a href="https://www.ucl.ac.uk/"><img src="images/ucl30.png" alt="UCL"
+                                                                  style="height: 30px; width: 86px; vertical-align: middle; padding: 5px 3px 5px 3px;"></a>
+                        </td>
+                        <td><a href="https://www.esrc.ac.uk/"><img src="images/esrc40.png" alt="ESRC"
+                                                                   style="border-width: 0; height: 40px; width: 48px; vertical-align: middle; padding: 0 3px;"></a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable"
+     tabindex="-1" role="dialog" aria-describedby="pdfBlock" aria-labelledby="ui-id-1"
+     style="display: none; position: absolute;">
+    <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-1"
+                                                                                            class="ui-dialog-title">Get PDF</span>
+        <button type="button"
+                class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close"
+                role="button" aria-disabled="false" title="close"><span
+                class="ui-button-icon-primary ui-icon ui-icon-closethick"></span><span
+                class="ui-button-text">close</span></button>
+    </div>
+    <div id="pdfBlock" class="ui-dialog-content ui-widget-content">
+        Another person is currently creating a PDF. Please wait a few moments and try again.
+    </div>
+    <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+        <div class="ui-dialog-buttonset">
+            <button type="button" id="OK" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                    role="button" aria-disabled="false"><span class="ui-button-text">OK</span></button>
+        </div>
+    </div>
+    <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div>
+</div>
+<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable"
+     tabindex="-1" role="dialog" aria-describedby="busyMessage" aria-labelledby="ui-id-2"
+     style="display: none; position: absolute;">
+    <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-2"
+                                                                                            class="ui-dialog-title">Site currently very busy</span>
+        <button type="button"
+                class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close"
+                role="button" aria-disabled="false" title="close"><span
+                class="ui-button-icon-primary ui-icon ui-icon-closethick"></span><span
+                class="ui-button-text">close</span></button>
+    </div>
+    <div id="busyMessage" class="ui-dialog-content ui-widget-content">
+        Welcome to DataShine: Census.<br><br>
+        The website is available but currently experiencing very high demand.<br><br>
+        <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 50px 0;"></span>You may find that some
+        images and data are slow to load. Old values may continue to display for a while after choosing new data to
+        view. Patience recommended!
+    </div>
+    <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+        <div class="ui-dialog-buttonset">
+            <button type="button" id="OK" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                    role="button" aria-disabled="false"><span class="ui-button-text">OK</span></button>
+        </div>
+    </div>
+    <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div>
+</div>
+<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable"
+     tabindex="-1" role="dialog" aria-describedby="pdfWait" aria-labelledby="ui-id-3"
+     style="display: none; position: absolute;">
+    <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-3"
+                                                                                            class="ui-dialog-title">Get PDF</span>
+        <button type="button"
+                class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close"
+                role="button" aria-disabled="false" title="close"><span
+                class="ui-button-icon-primary ui-icon ui-icon-closethick"></span><span
+                class="ui-button-text">close</span></button>
+    </div>
+    <div id="pdfWait" class="ui-dialog-content ui-widget-content">
+        Please wait while your PDF is being generated. This could take up to a minute. Press OK once you see it
+        downloaded.
+    </div>
+    <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+        <div class="ui-dialog-buttonset">
+            <button type="button" id="Cancel"
+                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                    aria-disabled="false"><span class="ui-button-text">Cancel</span></button>
+        </div>
+    </div>
+    <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div>
+</div>
+<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable"
+     tabindex="-1" role="dialog" aria-describedby="dataWait" aria-labelledby="ui-id-4"
+     style="display: none; position: absolute;">
+    <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-4"
+                                                                                            class="ui-dialog-title">Get Data</span>
+        <button type="button"
+                class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close"
+                role="button" aria-disabled="false" title="close"><span
+                class="ui-button-icon-primary ui-icon ui-icon-closethick"></span><span
+                class="ui-button-text">close</span></button>
+    </div>
+    <div id="dataWait" class="ui-dialog-content ui-widget-content">
+        Please wait while your data is being retrieved. Your browser will download it as a CSV file.
+    </div>
+    <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+        <div class="ui-dialog-buttonset">
+            <button type="button" id="Cancel"
+                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                    aria-disabled="false"><span class="ui-button-text">Cancel</span></button>
+        </div>
+    </div>
+    <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div>
+</div>
+<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable"
+     tabindex="-1" role="dialog" aria-describedby="dataMessage" aria-labelledby="ui-id-5"
+     style="display: none; position: absolute;">
+    <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-5"
+                                                                                            class="ui-dialog-title">Get Data</span>
+        <button type="button"
+                class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close"
+                role="button" aria-disabled="false" title="close"><span
+                class="ui-button-icon-primary ui-icon ui-icon-closethick"></span><span
+                class="ui-button-text">close</span></button>
+    </div>
+    <div id="dataMessage" class="ui-dialog-content ui-widget-content">
+        A CSV of the data used to produce the current map will be downloaded. If you wish, you can adjust the desired
+        bounding box here:
+        <table style="margin: 10px auto">
+            <tbody>
+            <tr>
+                <td></td>
+                <td><input type="text" id="bbNorth" size="10"></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><input type="text" id="bbWest" size="10"></td>
+                <td></td>
+                <td><input type="text" id="bbEast" size="10"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><input type="text" id="bbSouth" size="10"></td>
+                <td></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+        <div class="ui-dialog-buttonset">
+            <button type="button" id="OK" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                    role="button" aria-disabled="false"><span class="ui-button-text">OK</span></button>
+            <button type="button" id="Cancel"
+                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                    aria-disabled="false"><span class="ui-button-text">Cancel</span></button>
+        </div>
+    </div>
+    <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div>
+</div>
+<div></div>
+<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable"
+     tabindex="-1" role="dialog" aria-describedby="pdfMessage" aria-labelledby="ui-id-6"
+     style="position: absolute; height: auto; width: 400px; top: 501.5px; left: 1076.5px; display: none;">
+    <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-6"
+                                                                                            class="ui-dialog-title">Get PDF</span>
+        <button type="button"
+                class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close"
+                role="button" aria-disabled="false" title="close"><span
+                class="ui-button-icon-primary ui-icon ui-icon-closethick"></span><span
+                class="ui-button-text">close</span></button>
+    </div>
+    <div id="pdfMessage" class="ui-dialog-content ui-widget-content"
+         style="width: auto; min-height: 40px; max-height: none; height: auto;">
+        This will produce and download a PDF on an A4 sheet (could be up to 10MB in size).<br><br>
+        This may take up to a minute to generate, or longer if the server is busy with other requests.<br><br>
+        <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
+        Note: The download may fail if you change to another view or site. After pressing OK, be patient!
+    </div>
+    <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+        <div class="ui-dialog-buttonset">
+            <button type="button" id="OK" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
+                    role="button" aria-disabled="false"><span class="ui-button-text">OK</span></button>
+            <button type="button" id="Cancel"
+                    class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button"
+                    aria-disabled="false"><span class="ui-button-text">Cancel</span></button>
+        </div>
+    </div>
+    <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
+    <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div>
+</div>
+<iframe scrolling="no" frameborder="0" allowtransparency="true"
+        src="https://platform.twitter.com/widgets/widget_iframe.06c6ee58c3810956b7509218508c7b56.html?origin=https%3A%2F%2Fdatashine.org.uk"
+        title="Twitter settings iframe" style="display: none;"></iframe>
+<iframe id="rufous-sandbox" scrolling="no" frameborder="0" allowtransparency="true" allowfullscreen="true"
+        style="position: absolute; visibility: hidden; display: none; width: 0px; height: 0px; padding: 0px; border: none;"
+        title="Twitter analytics iframe"></iframe>
+</body>
+<div id="cye-workaround-body"
+     style="position: absolute; left: 0px; top: 0px; z-index: -2147483646; background: none 0% 0% / auto repeat scroll padding-box border-box white; height: 1241px; width: 1446px;"></div>
+<div id="cye-workaround-body-image"
+     style="position: absolute; left: 0px; top: 0px; z-index: -2147483645; background: none 0% 0% / auto repeat scroll padding-box border-box rgba(0, 0, 0, 0); height: 1241px; width: 1446px;"></div>
+</html>

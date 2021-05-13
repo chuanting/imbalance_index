@@ -9,6 +9,7 @@
 """
 import numpy as np
 import geopandas as gpd
+import time
 
 
 def imbalance_index(pop, bs, users_per_bs=100, a=1.0, b=1.0):
@@ -41,11 +42,15 @@ def main():
     folder = 'data/target_country/'
     division_folder = 'data/division/'
     grid_folder = 'data/grid/'
-    target_country = ['USA', 'SAU', 'BRA', 'UGA', 'TUN', 'TZA', 'ZAF', 'VNM', 'ROU', 'ESP', 'THA']
-    rho_values = [rho for rho in range(5, 105, 5)]
+    # target_country = ['USA', 'SAU', 'BRA', 'UGA', 'TUN', 'TZA', 'ZAF', 'VNM', 'ROU', 'ESP', 'THA']
+    target_country = ['FRA']
+    # rho_values = [rho for rho in range(5, 105, 5)]
+    rho_values = [100]
     col_names = [str(col) for col in rho_values]
+
     for i, name in enumerate(target_country):
         print(i, name)
+        start = time.time()
         print('Now processing {:} data'.format(name))
         # get the number of BS and population per grid
         division_wise_info = gpd.read_file(division_folder + name + '_all.geojson')
@@ -62,6 +67,8 @@ def main():
                                                            upb)
         division_wise_info = division_wise_info[['pop', 'bs', 'geometry'] + col_names]
         grid_wise_info = grid_wise_info[['pop', 'bs', 'geometry', 'lon', 'lat'] + col_names]
+
+        print('Time used: {:.4f}'.format(time.time() - start))
 
         # output the obtained index results (division wise)
         division_wise_info.to_file(folder + name + '.division.shp')
