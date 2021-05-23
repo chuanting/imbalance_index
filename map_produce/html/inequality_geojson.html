@@ -203,43 +203,34 @@
     }
 
     map.on('load', function () {
-        // map.addSource('ct', {
-        //     type: 'vector',
-        //     url: 'mapbox://zctzzy.bo9z4mex'
-        // });
         map.addLayer({
             'id': 'world',
-            'type': 'line',
+            'type': 'fill',
             source: {
                 type: 'geojson',
                 data: '../../data/gadm36_shp/a.geojson' // replace this with the url of your own geojson
             },
-            'paint': {
-                'line-color': '#00ffff',
-                'line-opacity': 0.9,
-            }
+            paint: {'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['number', ['get', 'pop']],
+                    0,
+                    '#2DC4B2',
+                    1,
+                    '#3BB3C3',
+                    2,
+                    '#669EC4',
+                    3,
+                    '#8B88B6',
+                    4,
+                    '#A2719B',
+                    5,
+                    '#AA5E79'
+                ],
+                'fill-opacity': 0.8
+            },
         })
-        // map.addLayer({
-        //     'id': 'world',
-        //     'type': 'line',
-        //     'source': 'ct',
-        //     'source-layer': 'final_boundary',
-        //     "paint": {
-        //         "line-color": "#00ffff",
-        //         "line-opacity": 0.9,
-        //     },
-        // });
 
-        // make a pointer cursor
-        map.getCanvas().style.cursor = 'default';
-
-        // // set map bounds to the continental US
-        // map.fitBounds([
-        //     [-133.2421875, 16.972741],
-        //     [-47.63671875, 52.696361]
-        // ]);
-
-        // make a pointer cursor
         map.getCanvas().style.cursor = 'default';
 
         var layers = ['0-10', '10-20', '20-50', '50-100', '100-200', '200-500', '500-1000', '1000+'];
@@ -279,7 +270,7 @@
         var country = e.target.value
         console.log(country)
         country == 'Worldwide' ? map.setFilter('world', ['==', ['string', ['get', 'GID_0']], 'WWW']) :
-            map.setFilter('world', ['==', ['string', ['get', 'GID_0']], country])
+            map.setFilter('world', ['get', 'pop'])
 
         setActiveCountry(country)
 
@@ -290,18 +281,7 @@
     function setActiveCountry(chapterName) {
         if (chapterName === activeChapterName) return;
         map.flyTo(countries[chapterName]);
-        // document.getElementById(chapterName).setAttribute('class', 'active');
-        // document.getElementById(activeChapterName).setAttribute('class', '');
-
         activeChapterName = chapterName;
     }
-
-    // document.getElementById('slider').addEventListener('input', function (e) {
-    //     var level = parseInt(e.target.value);
-    //     // update the map
-    //     map.setFilter('worldwide', ['==', ['number', ['get', 'admin_level']], level]);
-    //     // update text in the UI
-    //     document.getElementById('active-level').innerText = level;
-    // });
 </script>
 </html>

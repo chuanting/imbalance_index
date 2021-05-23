@@ -86,8 +86,14 @@ filtered = world.loc[world['area']>=2]
 filtered.to_file('filtered_world.geojson', driver='GeoJSON')
 ```
 
+5. Count number of points in a polygon
+```shell script
+mapshaper three-levels-01.geojson -join pop.geojson calc='pop=count()' fields= -o force format=geojson a.geojson
+```
 
 ## convert from geojson to mbtiles
 1. on you mac, type xcode-select --install to upate your homebrew
 2. brew install tippecanoe
-3. 
+3. ```shell script
+tippecanoe -zg -o out.mbtiles --drop-densest-as-needed in.geojson
+```

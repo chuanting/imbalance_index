@@ -105,8 +105,8 @@ def main():
     df_name = df_country_info.loc[df_country_info['Year'] == 2019]
     for i, name in enumerate(df_name['ISO Code']):
         print(i, name)
-        # if i > 2:
-        #     break
+        if i > 2:
+            break
         print('Now processing {:} data'.format(name))
 
         mcc = np.array([mobile_codes.alpha3(name).mcc], dtype=int).ravel()
