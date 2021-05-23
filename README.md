@@ -54,3 +54,40 @@ https://plotly.com/r/choropleth-maps/
 
 https://rstudio-pubs-static.s3.amazonaws.com/324400_69a673183ba449e9af4011b1eeb456b9.html
 
+
+
+## reduce GeoJSON complexity
+
+https://github.com/mbloch/mapshaper 
+
+1. Install npm first.
+2. Use the following commands to reduce the size of the file.
+
+```shell script
+mapshaper -i gadm36.shp -simplify 0.1% keep-shapes -filter-islands min-area=100km2 remove-empty -filter 'GID_0=="ATA"' invert -o force simplified-world.shp
+```
+
+3. Merge polygons into a country-level geojson
+
+```shell script
+mapshaper simplified-world.shp -simplify 1% -dissolve GID_0 -o format=geojson country-level.geojson
+```
+```shell script
+mapshaper simplified-world.shp -simplify 1% -dissolve NAME_1,NAME_2,NAME_3 -o format=geojson three-levels-01.geojson
+```
+4. Remove places with very small area and also the Antarctica 
+
+```python
+import geopandas as gpd
+world = gpd.read_file('country-level.geojson')
+world['area'] = world.geometry.area
+world.drop(world.loc[world['GID_0']=='ATA'].index, inplace=True)
+filtered = world.loc[world['area']>=2]
+filtered.to_file('filtered_world.geojson', driver='GeoJSON')
+```
+
+
+## convert from geojson to mbtiles
+1. on you mac, type xcode-select --install to upate your homebrew
+2. brew install tippecanoe
+3. 

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Load Leaflet from CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Load Esri Leaflet from CDN -->
+    <!-- See: http://esri.github.io/esri-leaflet/examples/ -->
+    <script src="https://unpkg.com/esri-leaflet/dist/esri-leaflet.js"></script>
+
+    <!-- Set style such that the map fills full window or frame -->
+    <style>
+        html, body, #map {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+<style>
+    /* STYLE COMMENT: in this section we can customize the style of the elements that display on the map */
+    /* Note the difference in style vs html comments */
+
+    #my-select-box {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 1em;
+    }
+
+    #my-select-box select {
+        font-size: 16px;
+    }
+
+    .legend {
+        width: 150px;
+        padding: 1em;
+        background: white;
+        line-height: 25px;
+        color: #555;
+        opacity: 1;
+    }
+
+    .legend i {
+        width: 25px;
+        height: 25px;
+        float: left;
+        margin-right: 18px;
+        opacity: 1;
+    }
+</style>
+
+<!-- Display the map -->
+<div id="map"></div>
+<div>
+    <div id="my-select-box" class="leaflet-bar">
+        <h3>COVID-19 by County - <small><em>updated daily</em></small></h3>
+        <label>
+            Select a map:
+            <select id="sn">
+                <!-- IMPORTANT: make sure that the selected option VALUE matches the default layer VARIABLE NAME to be mapped  -->
+                <option value='Confirmed' selected="selected">Confirmed Cases</option>
+                <option value='Deaths'>Deaths</option>
+                <option value='FatalityRa'>Fatality Rate</option>
+            </select>
+        </label>
+    </div>
+</div>
+
+<script>
+
+    // Set default layer attribute to be mapped
+    var sn_val = 'Confirmed'; //options: Confirmed, Deaths
+
+    // set up color arrays for each mapped attribute - used to style polygons and legend
+    var mycolors = {
+        Confirmed: ['#bd0026', '#f03b20', '#fd8d3c', '#fecc5c', '#ffffb2'],
+        Deaths: ['#980043', '#dd1c77', '#df65b0', '#d7b5d8', '#f1eef6'],
+        FatalityRa: ['#980043', '#dd1c77', '#df65b0', '#d7b5d8', '#f1eef6']
+    }
+
+    // set up custom breaks for each mapped attribute
+    var mybreaks = {
+        Confirmed: [1000, 500, 100, 1, 0],
+        Deaths: [500, 100, 50, 1, 0],
+        FatalityRa: [5, 4, 2, 1, 0]
+    }
+
+    //set up custom popup template strings for each mapped attribute (UGLY LONG STRINGS)
+    var popup_strings = {
+        Confirmed: '<h3>{Countyname} County, {ST_Abbr}</h3><hr>Confirmed Cases: {Confirmed}</br>Deaths: {Deaths}<br> <a href="{url}" target="_blank">View Status Report</a> <p><em>last updated: {DateChecke}</em></p>',
+
+        Deaths: '<h3>{Countyname} County, {ST_Abbr}</h3><hr>Confirmed Cases: {Confirmed}</br> Deaths: {Deaths}<br> <a href="{url}" target="_blank">View County Status Report</a> <p><em>last updated: {DateChecke}</em></p>',
+        FatalityRa: '<h3>{Countyname} County, {ST_Abbr}</h3><hr>Fatality Rate: {FatalityRa}% </br>Confirmed Cases: {Confirmed}</br> Deaths: {Deaths}<br> <a href="{url}" target="_blank">View County Status Report</a> <p><em>last updated: {DateChecke}</em></p>',
+    }
+
+    function getStyle(feature) {
+        // Function to set the style for the selected layer attribute being mapped
+        return {
+            fillColor: getColor(feature['properties'][sn_val], sn_val),
+            fillOpacity: 0.85,
+            weight: 0.25,
+            opacity: 0.65,
+            color: "grey",
+        };
+
+    }
+
+    function getColor(d, v) {
+        // Function to get the color map for the selected layer attribute being mapped
+        return d == undefined ? "#d3d3d3" :
+            d >= mybreaks[v][0] ? mycolors[v][0] :
+                d >= mybreaks[v][1] ? mycolors[v][1] :
+                    d >= mybreaks[v][2] ? mycolors[v][2] :
+                        d >= mybreaks[v][3] ? mycolors[v][3] :
+                            mycolors[v][4];
+
+    }//end function getColor
+
+
+    function highlightFeature(e) {
+        var layer = e.target;
+
+        layer.setStyle({
+            weight: 5,
+            color: '#666',
+            dashArray: '',
+            fillOpacity: 0.7
+        });
+
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+            layer.bringToFront();
+        }
+
+    }
+
+
+    function resetHighlight(e) {
+        // highlight a single feature
+        layer = e.target;
+        layer.setStyle({
+            weight: 0.5,
+            color: 'grey',
+            dashArray: '',
+            fillOpacity: 0.7
+        });
+    }
+
+
+    function onEachFeature(feature, layer) {
+        // remove hightlighted feature
+        layer.on({
+            mouseover: highlightFeature,
+            mouseout: resetHighlight
+        });
+    }
+
+
+    //////////////////////////////////////////////////////
+    // CREATE the map
+    //////////////////////////////////////////////////////
+    var map = L.map('map').setView([37.285489, -100.34004], 5); //Centered on continental USA
+
+    // Add the baselayer
+    L.esri.basemapLayer("DarkGray").addTo(map);
+
+    // Add the map data as an ESRI FeatureLayer
+    var cendata = L.esri.featureLayer({
+        url: "https://services9.arcgis.com/6Hv9AANartyT7fJW/arcgis/rest/services/USCounties_cases_V1/FeatureServer/0",
+        style: getStyle,
+        onEachFeature: onEachFeature
+    }).addTo(map);
+
+    // Set the default style for the polygons
+    cendata.setStyle(getStyle);
+
+    // Set the default popup template
+    cendata.bindPopup(function (e) {
+        //uncomment and click on  a feature in the map to see all available fields you can add top popup
+        //console.log(e.feature.properties)
+
+        // Note we could just pass in e.features.properties to L.Util.template but we do not
+        // so that we can format the number of significant digits displayed for the Fatality Rate (FatalityRa)
+        //return L.Util.template(popup_strings[sn_val], e.feature.properties);
+
+        x = e.feature.properties;
+        temp = {
+            Countyname: x.Countyname,
+            ST_Abbr: x.ST_Abbr,
+            Confirmed: x.Confirmed,
+            Deaths: x.Deaths,
+            FatalityRa: x.FatalityRa.toFixed(1),
+            url: x.url,
+            DateChecke: x.DateChecke
+        };
+        return L.Util.template(popup_strings[sn_val], temp);
+    });
+
+
+    //////////////////////////////////////////////////////
+    // Make the map styles, legend & popups dynamic
+    //   based on the layer attribute being mapped
+    //////////////////////////////////////////////////////
+    // identify the doc element with the layer attribute options
+    var sn = document.getElementById('sn');
+
+    sn.addEventListener('change', function () {
+        //Actions to update the map
+
+        //get the value for the type of selected map
+        sn_val = sn.value
+
+        // update the map style
+        cendata.setStyle(getStyle);
+
+        //update the popup content bindings
+        cendata.bindPopup(function (e) {
+            x = e.feature.properties;
+            console.log(x)
+            temp = {
+                Countyname: x.Countyname,
+                ST_Abbr: x.ST_Abbr,
+                Confirmed: x.Confirmed,
+                Deaths: x.Deaths,
+                FatalityRa: x.FatalityRa.toFixed(1),
+                url: x.url,
+                DateChecke: x.DateChecke
+            };
+            //return L.Util.template(popup_strings[sn_val], e.feature.properties);
+            return L.Util.template(popup_strings[sn_val], temp);
+        });
+
+        // update the legend
+        legend.getContainer().innerHTML = updateLegend(sn_val);
+
+    });
+
+    //////////////////////////////////////////////////////
+    // Add the dynamic LEGEND STUFF
+    //////////////////////////////////////////////////////
+    legend = L.control({position: 'bottomright'});
+
+    legend.onAdd = function (map) {
+
+        var div = L.DomUtil.create('div', 'info legend');
+        var grades = mybreaks[sn_val];
+        labels = [];
+
+        console.log(grades);
+        div.innerHTML = "<h3>LEGEND</h3>";
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < grades.length; i++) {
+            div.innerHTML +=
+                '<i style="background:' + getColor(grades[i], sn_val) + '"></i> ' +
+                grades[i] + (grades[i - 1] ? '&ndash;' + grades[i - 1] + '<br>' : '+<br>');
+        }
+
+        div.innerHTML += '<br><small><a href="https://www.arcgis.com/home/item.html?id=4cb598ae041348fb92270f102a6783cb" target="_blank">Data from Johns Hopkins Univ.</a></small>';
+
+        return div;
+
+    };
+
+    legend.addTo(map);
+
+    // Create a function to update the map when the variable to map is changed
+    function updateLegend(sn_val) {
+        var grades = mybreaks[sn_val];
+        labels = [];
+
+        var myHTML = "<h3>LEGEND</h3>";
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < grades.length; i++) {
+            myHTML +=
+                '<i style="background:' + getColor(grades[i], sn_val) + '"></i> ' +
+                grades[i] + (grades[i - 1] ? '&ndash;' + grades[i - 1] + '<br>' : '+<br>');
+        }
+
+        myHTML += '<br><small><a href="https://www.arcgis.com/home/item.html?id=4cb598ae041348fb92270f102a6783cb" target="_blank">Data from Johns Hopkins Univ.</a></small>';
+
+        return myHTML;
+
+    }
+
+
+</script>
+</body>
+</html>
+
+

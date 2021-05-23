@@ -40,6 +40,12 @@
         color: #2dc4b2;
     }
 
+    p {
+        font-size: 0.85em;
+        margin: 10px;
+        text-align: left;
+    }
+
     #console {
         position: absolute;
         width: 340px;
@@ -68,11 +74,55 @@
         text-align: center;
     }
 
+    /**
+* Set rules for how the map overlays
+* (information box and legend) will be displayed
+* on the page. */
+    .map-overlay {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.8);
+        margin-right: 20px;
+        font-family: Arial, sans-serif;
+        overflow: auto;
+        border-radius: 3px;
+    }
+
+    #features {
+        top: 0;
+        height: 100px;
+        margin-top: 20px;
+        width: 250px;
+    }
+
+    #legend {
+        padding: 10px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        line-height: 18px;
+        height: 170px;
+        margin-bottom: 40px;
+        width: 120px;
+    }
+
+    .legend-key {
+        display: inline-block;
+        border-radius: 20%;
+        width: 10px;
+        height: 10px;
+        margin-right: 5px;
+    }
+
 </style>
 
 <body>
 
 <div id='map'></div>
+<div class='map-overlay' id='features'><h2>Statistics</h2>
+    <div id='pd'><p>Hover over a state!</p></div>
+</div>
+<div class='map-overlay' id='legend'></div>
+
 
 <div id='console'>
     <h1>Digital Inequality Visualization</h1>
@@ -96,6 +146,7 @@
     <div class="session">
         <label for="country">Country:</label>
         <select name="country" id="country">
+            <option value="Worldwide" selected="selected">Worldwide</option>
             <option value="CHN">CHN</option>
             <option value="USA">USA</option>
             <option value="AGO">AGO</option>
@@ -125,44 +176,120 @@
 
 <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoiemN0enp5IiwiYSI6ImNrMHBrMjIyYTBrYTUzZHM4bDNlOHdvbnoifQ.aBNOdmnrTnY28EZ0AQpA3A';
-
     var map = new mapboxgl.Map({
         container: 'map', // container element id
-        style: 'mapbox://styles/mapbox/light-v10',
-        center: [-74.0059, 40.7128], // initial map center in [lon, lat]
-        zoom: 4
+        style: 'mapbox://styles/mapbox/dark-v10',
+        center: [-18.606628, 37.718556], // initial map center in [lon, lat]
+        zoom: 2,
     });
 
+    var countries = {
+        'Worldwide':{
+            center: [-18.606628, 37.718556],
+            zoom: 2,
+        },
+        'USA': {
+            center: [-74.0059, 40.7128],
+            zoom: 3,
+        },
+        'CHN': {
+            center: [107.386266, 33.125283],
+            zoom: 3,
+        },
+        'AGO': {
+            center: [17.459119, -12.626045],
+            zoom: 5
+        }
+    }
+
     map.on('load', function () {
+        map.addSource('ct', {
+            type: 'vector',
+            url: 'mapbox://zctzzy.bo9z4mex'
+        });
         map.addLayer({
-            id: 'worldwide',
-            type: 'line',
-            source: {
-                type: 'geojson',
-                data: '../data/worldwide.geojson', // replace this with the url of your own geojson
-            },
+            'id': 'world',
+            'type': 'line',
+            'source': 'ct',
+            'source-layer': 'final_boundary',
             "paint": {
                 "line-color": "#00ffff",
                 "line-opacity": 0.9,
             },
         });
-    });
 
-    document.getElementById('slider').addEventListener('input', function (e) {
-        var level = parseInt(e.target.value);
-        // update the map
-        map.setFilter('worldwide', ['==', ['number', ['get', 'admin_level']], level]);
-        // update text in the UI
-        document.getElementById('active-level').innerText = level;
+        // make a pointer cursor
+        map.getCanvas().style.cursor = 'default';
+
+        // // set map bounds to the continental US
+        // map.fitBounds([
+        //     [-133.2421875, 16.972741],
+        //     [-47.63671875, 52.696361]
+        // ]);
+
+        // make a pointer cursor
+        map.getCanvas().style.cursor = 'default';
+
+        var layers = ['0-10', '10-20', '20-50', '50-100', '100-200', '200-500', '500-1000', '1000+'];
+        var colors = ['#FFEDA0', '#FED976', '#FEB24C', '#FD8D3C', '#FC4E2A', '#E31A1C', '#BD0026', '#800026'];
+
+        for (i = 0; i < layers.length; i++) {
+            var layer = layers[i];
+            var color = colors[i];
+            var item = document.createElement('div');
+            var key = document.createElement('span');
+            key.className = 'legend-key';
+            key.style.backgroundColor = color;
+
+            var value = document.createElement('span');
+            value.innerHTML = layer;
+            item.appendChild(key);
+            item.appendChild(value);
+            legend.appendChild(item);
+        }
+
+        map.on('mousemove', function (e) {
+            var states = map.queryRenderedFeatures(e.point, {
+                layer: ['landcover']
+            });
+
+            if (states.length > 0) {
+                document.getElementById('pd').innerHTML = '<h3><strong>' + states[0].properties.name + '</strong></h3><p><strong><em>' + states[0].properties.density + '</strong> people per square mile</em></p>';
+            } else {
+                document.getElementById('pd').innerHTML = '<p>Hover over a state!</p>';
+            }
+        });
+
+
     });
 
     document.getElementById('country').addEventListener('input', function (e) {
-        // var country = e.target.value;
         var country = e.target.value
-        map.setFilter('worldwide', ['==', ['string', ['get', 'ISO3']], country])
-        // document.getElementById()
+        console.log(country)
+        country == 'Worldwide' ? map.setFilter('world', ['==', ['string', ['get', 'GID_0']], 'WWW']):
+            map.setFilter('world', ['==', ['string', ['get', 'GID_0']], country])
+
+        setActiveCountry(country)
 
     })
 
+    var activeChapterName = 'worldwide';
+
+    function setActiveCountry(chapterName) {
+        if (chapterName === activeChapterName) return;
+        map.flyTo(countries[chapterName]);
+        // document.getElementById(chapterName).setAttribute('class', 'active');
+        // document.getElementById(activeChapterName).setAttribute('class', '');
+
+        activeChapterName = chapterName;
+    }
+
+    // document.getElementById('slider').addEventListener('input', function (e) {
+    //     var level = parseInt(e.target.value);
+    //     // update the map
+    //     map.setFilter('worldwide', ['==', ['number', ['get', 'admin_level']], level]);
+    //     // update text in the UI
+    //     document.getElementById('active-level').innerText = level;
+    // });
 </script>
 </html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Digital Inequality Visualization</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'/>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css' rel='stylesheet'/>
+<!--    <link href="css/assembly.min.css" rel="stylesheet"/>-->
+</head>
+
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Helvetica Neue', Helvetica, Arial, Sans-serif;
+    }
+
+    #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+    }
+
+    h1 {
+        font-size: 20px;
+        line-height: 30px;
+    }
+
+    h2 {
+        font-size: 14px;
+        line-height: 20px;
+        margin-bottom: 10px;
+    }
+
+    a {
+        text-decoration: none;
+        color: #2dc4b2;
+    }
+
+    #console {
+        position: absolute;
+        width: 340px;
+        margin: 10px;
+        padding: 10px 20px;
+        background-color: white;
+    }
+
+    .session {
+        margin-bottom: 20px;
+    }
+
+    .row {
+        height: 12px;
+        width: 100%;
+    }
+
+    .colors {
+        background: linear-gradient(to right, #2dc4b2, #3bb3c3, #669ec4, #8b88b6, #a2719b, #aa5e79);
+        margin-bottom: 5px;
+    }
+
+    .label {
+        width: 15%;
+        display: inline-block;
+        text-align: center;
+    }
+
+</style>
+
+<body>
+
+<div id='map'></div>
+
+<div id='console'>
+    <h1>Digital Inequality Visualization</h1>
+    <p>Data: <a href='https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95'>BS</a> in
+        Jan. 2020</p>
+
+    <div class='session'>
+        <h2>Imbalance Index</h2>
+        <div class='row colors'>
+        </div>
+        <div class='row labels'>
+            <div class='label'>0.0</div>
+            <div class='label'>0.2</div>
+            <div class='label'>0.4</div>
+            <div class='label'>0.6</div>
+            <div class='label'>0.8</div>
+            <div class='label'>1.0</div>
+        </div>
+    </div>
+
+    <div class="session">
+        <label for="country">Country:</label>
+        <select name="country" id="country">
+            <option value="CHN">CHN</option>
+            <option value="USA">USA</option>
+            <option value="AGO">AGO</option>
+            <option value="AFG">AFG</option>
+        </select>
+    </div>
+
+    <div class='session'>
+        <label>Type: </label>
+        <div class='col' id='filters'>
+            <input id='admin' type='radio' name='toggle' value='admin' checked='checked'>
+            <label for='admin'>Admin</label>
+            <input id='grid' type='radio' name='toggle' value='grid'>
+            <label for='grid'>Grid</label>
+        </div>
+    </div>
+
+    <div class='session' id='sliderbar'>
+        <h2>Hour: <label id='active-level'>Level</label></h2>
+        <input id='slider' class='row' type='range' min='0' max='6' step='1' value='2'/>
+    </div>
+
+</div>
+
+
+</body>
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiemN0enp5IiwiYSI6ImNrMHBrMjIyYTBrYTUzZHM4bDNlOHdvbnoifQ.aBNOdmnrTnY28EZ0AQpA3A';
+
+    var map = new mapboxgl.Map({
+        container: 'map', // container element id
+        style: 'mapbox://styles/mapbox/dark-v10',
+        center: [-74.0059, 40.7128], // initial map center in [lon, lat]
+        zoom: 4,
+        // bearing: 180
+    });
+
+    var country_event = document.getElementById('country');
+    var country_name = country_event.options[country_event.selectedIndex].text
+
+    console.log(`This is ${country_name} times easier!`);
+
+    map.on('load', function () {
+        map.addLayer({
+            id: 'worldwide',
+            type: 'line',
+            source: {
+                type: 'geojson',
+                // data: './data/{0}/{1}.geojson'.format(country_name, country_name),
+                data: './data/' + country_name + '/' + country_name + '.geojson', // replace this with the url of your own geojson
+            },
+            "paint": {
+                "line-color": "#00ffff",
+                "line-opacity": 0.9,
+            },
+        });
+    });
+
+    document.getElementById('country').addEventListener('input', function (e) {
+        // var country = e.target.value;
+        var country = e.target.value
+        console.log(`This is ${country} times easier!`);
+        map.setFilter('worldwide', ['==', ['string', ['get', 'ISO3']], country])
+
+    })
+
+    document.getElementById('slider').addEventListener('input', function (e) {
+        var level = parseInt(e.target.value);
+        // update the map
+        map.setFilter('worldwide', ['==', ['number', ['get', 'admin_level']], level]);
+        // update text in the UI
+        document.getElementById('active-level').innerText = level;
+    });
+
+</script>
+</html>
