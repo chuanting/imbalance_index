@@ -89,6 +89,8 @@ filtered.to_file('filtered_world.geojson', driver='GeoJSON')
 5. Count number of points in a polygon
 ```shell script
 mapshaper three-levels-01.geojson -join pop.geojson calc='pop=count()' fields= -o force format=geojson a.geojson
+
+mapshaper-xl 50gb all_name.geojson -join pop.geojson calc='pop=count()' fields= -o force format=geojson city-level-pop.geojson
 ```
 
 ## convert from geojson to mbtiles
@@ -96,4 +98,7 @@ mapshaper three-levels-01.geojson -join pop.geojson calc='pop=count()' fields= -
 2. brew install tippecanoe
 3. ```shell script
 tippecanoe -zg -o out.mbtiles --drop-densest-as-needed in.geojson
+
+```shell script
+ogr2ogr -f GEOJSON results.geojson world.pop.csv -oo X_POSSIBLE_NAMES=longitude -oo Y_POSSIBLE_NAMES=latitude -oo KEEP_GEOM_COLUMNS=NO
 ```

@@ -6,7 +6,9 @@
     <meta name='viewport' content='width=device-width, initial-scale=1'/>
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css' rel='stylesheet'/>
-    <link href="css/assembly.min.css" rel="stylesheet"/>
+    <link href='https://api.mapbox.com/mapbox-assembly/v1.2.1/assembly.min.css' rel='stylesheet'>
+    <script async defer src='https://api.mapbox.com/mapbox-assembly/v1.2.1/assembly.js'></script>
+    <link href="http://fonts.cdnfonts.com/css/titillium-web" rel="stylesheet">
 </head>
 
 
@@ -14,7 +16,8 @@
     body {
         margin: 0;
         padding: 0;
-        font-family: 'Helvetica Neue', Helvetica, Arial, Sans-serif;
+        /*font-family: 'Helvetica Neue', Helvetica, Arial, Sans-serif;*/
+        font-family: 'Titillium Web', sans-serif;
     }
 
     #map {
@@ -64,7 +67,7 @@
     }
 
     .colors {
-        background: linear-gradient(to right, #2dc4b2, #3bb3c3, #669ec4, #8b88b6, #a2719b, #aa5e79);
+        background: linear-gradient(to right, #1A9850, #91CF60, #D9EF8B, #FEE08B, #FC8D59, #D73027);
         margin-bottom: 5px;
     }
 
@@ -74,45 +77,6 @@
         text-align: center;
     }
 
-    /**
-* Set rules for how the map overlays
-* (information box and legend) will be displayed
-* on the page. */
-    .map-overlay {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        background: rgba(255, 255, 255, 0.8);
-        margin-right: 20px;
-        font-family: Arial, sans-serif;
-        overflow: auto;
-        border-radius: 3px;
-    }
-
-    #features {
-        top: 0;
-        height: 100px;
-        margin-top: 20px;
-        width: 250px;
-    }
-
-    #legend {
-        padding: 10px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        line-height: 18px;
-        height: 170px;
-        margin-bottom: 40px;
-        width: 120px;
-    }
-
-    .legend-key {
-        display: inline-block;
-        border-radius: 20%;
-        width: 10px;
-        height: 10px;
-        margin-right: 5px;
-    }
-
 </style>
 
 <body>
@@ -120,9 +84,7 @@
 <div id='map'></div>
 <div id='console'>
     <h1>Digital Inequality Visualization</h1>
-    <p>Data: <a href='https://data.cityofnewyork.us/Public-Safety/NYPD-Motor-Vehicle-Collisions/h9gi-nx95'>BS</a> in
-        Jan. 2020</p>
-
+    <br>
     <div class='session'>
         <h2>Imbalance Index</h2>
         <div class='row colors'>
@@ -140,11 +102,29 @@
     <div class="session">
         <label for="country">Country:</label>
         <select name="country" id="country">
-            <option value="WWW" selected="selected">WWW</option>
-            <option value="CHN">CHN</option>
-            <option value="USA">USA</option>
-            <option value="AGO">AGO</option>
-            <option value="AFG">AFG</option>
+<!--            <option value="WWW">WWW</option>-->
+            <option value="USA" selected="selected">United States</option>
+            <option value="AGO">Angola</option>
+            <option value="FRA">French</option>
+            <option value="VNM">ViteNam</option>
+            <option value="BRA">Brazil</option>
+            <option value="SAU">Saudi Arabia</option>
+            <option value="ALB">Albania</option>
+            <option value="DZA">Algeria</option>
+            <option value="BHR">Bahrain</option>
+            <option value="BGD">Bangladesh</option>
+            <option value="BEL">Belgium</option>
+            <option value="COL">Colombia</option>
+            <option value="DEU">Germany</option>
+            <option value="ARG">Argentina</option>
+            <option value="BOL">Bolivia</option>
+            <option value="CHL">Chile</option>
+            <option value="PER">Peru</option>
+            <option value="VEN">Venezuela</option>
+            <option value="ECU">Ecuador</option>
+            <option value="SUR">Suriname</option>
+            <option value="GUY">Guyana</option>
+
         </select>
     </div>
 
@@ -153,15 +133,17 @@
         <div class='col' id='filters'>
             <input id='admin' type='radio' name='toggle' value='admin' checked='checked'>
             <label for='admin'>Admin</label>
-            <input id='grid' type='radio' name='toggle' value='grid'>
-            <label for='grid'>Grid</label>
+            <!--            <input id='grid' type='radio' name='toggle' value='grid'>-->
+            <!--            <label for='grid'>Grid</label>-->
         </div>
     </div>
 
     <div class='session' id='sliderbar'>
-        <h2>Hour: <label id='active-level'>Year</label></h2>
-        <input id='slider' class='row' type='range' min='2014' max='2022' step='2' value='2014'/>
+        <h2>Year: <label id='active-level'>2014</label></h2>
+        <input id='slider' class='row' type='range' min='2014' max='2022' step='1' value='2014'/>
     </div>
+
+    <p>Designed by KAUST Team</p>
 
 </div>
 
@@ -174,58 +156,137 @@
         container: 'map', // container element id
         style: 'mapbox://styles/mapbox/dark-v10',
         // style: 'mapbox://styles/zctzzy/ckp1h4pn05fcu17mhsy0ok65c'
-        center: [-18.606628, 37.718556], // initial map center in [lon, lat]
-        zoom: 2,
+        center: [-102.80273616, 40.84706036], // initial map center in [lon, lat]
+        zoom: 4,
     });
 
     var countries = {
         'Worldwide': {
             center: [-18.606628, 37.718556],
-            zoom: 2,
+            zoom: 4,
         },
         'USA': {
-            center: [-74.0059, 40.7128],
-            zoom: 3,
+            center: [-102.80273616, 40.84706036],
+            zoom: 4
         },
         'CHN': {
             center: [107.386266, 33.125283],
-            zoom: 3,
+            zoom: 4,
+        },
+        'FRA': {
+            center: [1.96289018, 47.15984001],
+            zoom: 6,
         },
         'AGO': {
             center: [17.459119, -12.626045],
             zoom: 5
-        }
+        },
+        'VNM': {
+            center: [106.41357288, 17.63006299],
+            zoom: 6,
+        },
+
+        'SAU': {
+            center: [43.76952991, 24.70026051],
+            zoom: 6,
+        },
+        'ALB': {
+            center: [20.0811767, 40.76806171],
+            zoom: 6,
+        },
+        'DZA': {
+            center: [2.9999825, 28.0000272],
+            zoom: 6,
+        },
+        'BHR': {
+            center: [50.5344606, 26.1551249],
+            zoom: 6,
+        },
+        'BGD': {
+            center: [90.2932426, 24.4768783],
+            zoom: 6,
+        },
+        'BEL': {
+            center: [4.57946776, 50.66774274],
+            zoom: 6,
+        },
+        'COL': {
+            center: [-73.783892, 2.8894434],
+            zoom: 6,
+        },
+        'DEU': {
+            center: [10.25115965, 51.16126064],
+            zoom: 6,
+        },
+        'ARG': {
+            center: [-65.13977052, -34.89268966],
+            zoom: 4,
+        },
+        'BOL': {
+            center: [-64.9912286, -17.0568696],
+            zoom: 6,
+        },
+        'CHL': {
+            center: [-71.3187697, -31.7613365],
+            zoom: 4,
+        },
+        'PER': {
+            center: [-75.0458515, -6.8699697],
+            zoom: 6,
+        },
+        'BRA': {
+            center: [-53.2, -10.3333333],
+            zoom: 4,
+        },
+
+
+        'VEN': {
+            center: [-66.1109318, 8.0018709],
+            zoom: 6,
+        },
+
+        'ECU': {
+            center: [-79.3666965, -1.3397668],
+            zoom: 6,
+        },
+
+        'SUR': {
+            center: [-56.0771187, 4.1413025],
+            zoom: 6,
+        },
+        'GUY': {
+            center: [-58.6416891, 4.8417097],
+            zoom: 6,
+        },
     }
 
     map.on('load', function () {
-        var filterCountry = ['==', ['string', ['get', 'GID_0']], 'WWW'];
-        var filterYear = ['==', ['number', ['get', 'year']], 2014]
+        var filterCountry = ['==', ['string', ['get', 'GID_0']], 'USA'];
+        var filterYear = ['==', ['number', ['get', 'year']], 2014];
+
+        map.addSource('mb', {
+            'type': 'vector',
+            'url': 'mapbox://zctzzy.09vl0bpa',
+        });
+
         map.addLayer({
             'id': 'world',
             'type': 'fill',
-            source: {
-                type: 'geojson',
-                data: '../../data/gadm36_shp/final_pop_bs_index.geojson' // replace this with the url of your own geojson
-            },
+            'source': 'mb',
+            'source-layer': 'final_index',
             paint: {
                 'fill-color': [
                     'interpolate',
                     ['linear'],
                     ['number', ['get', 'index']],
-                    0,
-                    '#2DC4B2',
-                    0.2,
-                    '#3BB3C3',
-                    0.4,
-                    '#669EC4',
-                    0.6,
-                    '#8B88B6',
-                    0.8,
-                    '#A2719B',
-                    1.0,
-                    '#AA5E79'
+                    0, '#1A9850',
+                    0.2, '#91CF60',
+                    0.4, '#D9EF8B',
+                    0.6, '#FEE08B',
+                    0.8, '#FC8D59',
+                    1.0, '#D73027'
                 ],
-                'fill-opacity': 0.8,
+                'fill-opacity': 1.0,
                 'fill-outline-color': '#000'
             },
             'filter': ['all', filterCountry, filterYear]
@@ -263,23 +324,10 @@
         document.getElementById('slider').addEventListener('input', function (e) {
             var year = parseInt(e.target.value);
             filterYear = ['==', ['number', ['get', 'year']], year]
+            // filterYear = ['get', year.toString()+'_index']
             map.setFilter('world', ['all', filterYear, filterCountry]);
-            // var country = document.getElementById('country')
-            // var current = country.options[country.selectedIndex].text
-            //
-            // var data = ['==', ['number', ['get', 'year']], level]
-            // console.log(data)
-            // var dd = ['==', ['string', ['get', 'GID_0', data]], current]
-            // console.log(dd)
-            // // var data = ['==', ['number', ['get', 'year', ['==', ['string', ['get', 'GID_0']], current]]], level]
-            // // var data = ['==', ['number', ['get', 'year',
-            // //     ['==', ['string', ['get', 'GID_0']], current]], level]]
-            // // var data = ['number', ['get', level.toString()+'_index']];
-            // // var data = ['==', ['number', ['get', 'year']], level];
-            // // console.log(data)
-            // // update the map
-            // map.setFilter('world', dd);
-            // // update text in the UI
+
+            // update text in the UI
             document.getElementById('active-level').innerText = year;
         });
 
