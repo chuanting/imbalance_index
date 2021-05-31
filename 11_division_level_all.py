@@ -12,9 +12,10 @@ import pandas as pd
 import geopandas as gpd
 import mobile_codes
 from spatialpandas import GeoDataFrame, sjoin
-from spatialpandas.geometry import PointArray
+from spatialpandas.geometry import PointArray, GeometryArray, PolygonArray, MultiPolygonArray
 import time
 import os
+from shapely.wkt import loads
 
 
 def get_info_per_grid(bs, pop, poly):
@@ -90,7 +91,7 @@ def imbalance_index(pop, bs, users_per_bs=100, a=1.0, b=1.0):
 def main():
     # worldwide boundaries in shape file
     folder = 'data/'
-    save_folder = 'data/final/'
+    save_folder = 'data/final/division/'
     if not os.path.isdir(save_folder):
         os.makedirs(save_folder)
     poly_file = folder + 'gadm36_shp/world_all_levels.geojson'
@@ -104,11 +105,11 @@ def main():
     df_country_info = pd.read_excel(country_names, skiprows=2, sheet_name=2)
     df_name = df_country_info.loc[df_country_info['Year'] == 2019]
     for i, name in enumerate(df_name['ISO Code']):
-        print(i, name)
-        # if i < 98:
+        # print(i, name)
+        # if i < 10:
         #     continue
-        # if i > 2:
-        #     break
+        # if name != 'BEL':
+        #     continue
         print('Now processing {:} data'.format(name))
 
         mcc = np.array([mobile_codes.alpha3(name).mcc], dtype=int).ravel()
@@ -128,7 +129,12 @@ def main():
         if df_poly.shape[0] == 0:
             continue
 
+        country_poly = worldwide.loc[(worldwide['GID_0'] == 'WWW') & (worldwide['NAME_0'] == df_poly['NAME_0'].unique()[0])]
+        # print(country_poly)
+        # country_poly['GID_0'] = 'WWW'
+
         df_poly = GeoDataFrame(df_poly)
+        country_poly = GeoDataFrame(country_poly)
 
         print('Creating GeoDataFrame from population data...')
         start = time.time()
@@ -147,16 +153,23 @@ def main():
         start = time.time()
         pop_per_grid = sjoin(gdf_population, df_poly)
         pop_per_grid_group = pop_per_grid.groupby(['NAME_2']).sum().reset_index()[['NAME_2', 'pop']]
+
+        country_poly['pop'] = gdf_population['pop'].sum()
+        pop_all_grid = np.array(gdf_population['pop'].sum(), ndmin=1)
         print('Time: {:}'.format(time.time() - start))
 
         print('Calculating # of BS per grid')
         start = time.time()
         results = []
         for year in range(2014, 2023):
+
+            # cp = country_poly.copy(deep=True)
             print(year)
             dates = pd.to_datetime(str(year))
             unix_stamp = (dates - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
             bs_year = gdf_bs.loc[gdf_bs['date'] <= unix_stamp]
+
+            bs_all_grid = np.array(bs_year['bs'].sum(), ndmin=1)
 
             bs_per_grid = sjoin(bs_year, df_poly)
             bs_per_grid_group = bs_per_grid.groupby('NAME_2').sum().reset_index()[['NAME_2', 'bs']]
@@ -166,50 +179,25 @@ def main():
 
             pop_align['pop'].fillna(0, inplace=True)
             bs_align['bs'].fillna(0, inplace=True)
+            pop_align['bs'] = bs_align['bs']
 
             pop_align['year'] = year
             pop_align['index'] = imbalance_index(pop_align['pop'], bs_align['bs'])
+
+            # cp['year'] = year
+            # cp['bs'] = bs_year['bs'].sum()
+            # cp['index'] = imbalance_index(pop_all_grid, bs_all_grid)
+
             results.append(pop_align)
+            # results.append(cp)
+            # country_poly.to_geopandas().to_file('d:/dd.geojson', driver='GeoJSON')
+        print('Time: {:}'.format(time.time() - start))
 
         final_index = pd.concat(results)
-        final_index_spd = GeoDataFrame(final_index).to_geopandas()
-        final_index_spd.to_file(save_folder + name + '_all.geojson', driver='GeoJSON')
-
-        # bs_per_grid = sjoin(gdf_bs, df_poly)
-        # bs_per_grid_group = bs_per_grid.groupby('NAME_2').sum().reset_index()[['NAME_2', 'bs']]
-        # # bs_per_grid_group.columns = ['UID', 'bs']
-        # print('Time: {:}'.format(time.time() - start))
-        #
-        # print('Align BS and grid')
-        # start = time.time()
-        # # pop_per_grid_group, bs_per_grid_group = dask.compute(pop_per_grid_group, bs_per_grid_group)
-        # pop_align = pd.merge(left=pop_per_grid_group, right=df_poly, on='NAME_2', how='right')
-        # bs_align = pd.merge(left=bs_per_grid_group, right=df_poly, on='NAME_2', how='right')
-        #
-        # pop_align['pop'].fillna(0, inplace=True)
-        # bs_align['bs'].fillna(0, inplace=True)
-        # print('Time: {:}'.format(time.time() - start))
-        #
-        # pop_align['bs'] = bs_align['bs']
-        #
-        # # get the number of BS and population per grid
-        # start = time.time()
-        # # all_info = get_info_per_grid(country_bs, df_pop, df_poly)
-        # GeoDataFrame(pop_align).to_geopandas().to_file(save_folder + name + '_all.geojson', driver='GeoJSON')
-        # # print('Time: {:}'.format(time.time() - start))
-        #
-        # # # calculate the imbalance index
-        # # print('Calculating imbalance index per grid...')
-        # # user_per_bs = 100
-        # # alpha = 1.0
-        # # beta = 1.0
-        # # all_info['old'] = all_info['pop'] / (all_info['bs'] * user_per_bs)
-        # # all_info['new'] = imbalance_index(all_info['pop'], all_info['bs'], user_per_bs, alpha, beta)
-        # # all_info.loc[(all_info['pop'] == 0) & (all_info['bs'] == 0), 'old'] = 0.0
-        # #
-        # # inf_imbalance = all_info.loc[all_info['old'] == np.inf, 'pop'] / user_per_bs
-        # # all_info.loc[all_info['old'] == np.inf, 'old'] = inf_imbalance.values
-        # # all_info.to_geopandas().to_file(save_folder + name + '_index.geojson', driver='GeoJSON')
+        final_index = GeoDataFrame(final_index).to_geopandas()
+        final_index.to_file(save_folder + name + '.division.geojson', driver='GeoJSON')
+        # final_index_spd = GeoDataFrame(final_index).to_geopandas()
+        # final_index_spd.to_file(save_folder + name + '_all.geojson', driver='GeoJSON')
 
 
 if __name__ == '__main__':

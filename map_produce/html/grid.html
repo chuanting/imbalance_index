@@ -159,9 +159,9 @@
         This map is designed by <a href="https://chuanting.github.io">Chuanting Zhang</a> @
         <a href="https://www.kaust.edu.sa/en">KAUST</a> and Yi Cao @ <a href="https://www.ujn.edu.cn/">UJN</a>
     </p>
-<!--    <div class="session" id="full" style="align-content: center">-->
-<!--        <button onclick="openFullscreen();">Fullscreen</button>-->
-<!--    </div>-->
+    <!--    <div class="session" id="full" style="align-content: center">-->
+    <!--        <button onclick="openFullscreen();">Fullscreen</button>-->
+    <!--    </div>-->
 
 
 </div>
@@ -280,21 +280,36 @@
         },
     }
 
+    let config = {
+        's1': {
+            'id': '2014',
+            'url': 'mapbox://zctzzy.2gwmr415',
+            'name': 'year_2014',
+        },
+        's2': {
+            'id': '2015',
+            'url': 'mapbox://zctzzy.1x9ao5xr',
+            'name': 'year_2015',
+        }
+    }
+
     map.on('load', function () {
         var filterCountry = ['==', ['string', ['get', 'GID_0']], 'USA'];
         var filterYear = ['==', ['number', ['get', 'year']], 2014];
         var filterType = ['==', ['string', ['get', 'type']], 'grid']
 
-        map.addSource('mb', {
-            'type': 'vector',
-            'url': 'mapbox://zctzzy.c35e0m7b',
-        });
+        for (let k in config) {
+            console.log(k)
+            map.addSource(k, {
+                'type': 'vector',
+                'url': config[k]['url']
+            })
 
-        map.addLayer({
-            'id': 'world',
+            map.addLayer({
+            'id': config[k]['id'],
             'type': 'fill',
-            'source': 'mb',
-            'source-layer': 'final_index',
+            'source': k,
+            'source-layer': config[k]['name'],
             paint: {
                 'fill-color': [
                     'interpolate',
@@ -311,7 +326,64 @@
                 'fill-outline-color': '#000'
             },
             'filter': ['all', filterCountry, filterYear, filterType]
-        })
+        });
+
+        }
+
+        // map.addSource('mb', {
+        //     'type': 'vector',
+        //     'url': 'mapbox://zctzzy.1x9ao5xr',
+        // });
+        //
+        // map.addSource('mb2014', {
+        //     'type': 'vector',
+        //     'url': 'mapbox://zctzzy.2gwmr415',
+        // })
+        //
+        // map.addLayer({
+        //     'id': '2014',
+        //     'type': 'fill',
+        //     'source': 'mb2014',
+        //     'source-layer': 'year_2014',
+        //     paint: {
+        //         'fill-color': [
+        //             'interpolate',
+        //             ['linear'],
+        //             ['number', ['get', 'index']],
+        //             0, '#1A9850',
+        //             0.2, '#91CF60',
+        //             0.4, '#D9EF8B',
+        //             0.6, '#FEE08B',
+        //             0.8, '#FC8D59',
+        //             1.0, '#D73027'
+        //         ],
+        //         'fill-opacity': 1.0,
+        //         'fill-outline-color': '#000'
+        //     },
+        //     'filter': ['all', filterCountry, filterYear, filterType]
+        // });
+        // map.addLayer({
+        //     'id': '2015',
+        //     'type': 'fill',
+        //     'source': 'mb',
+        //     'source-layer': 'year_2015',
+        //     paint: {
+        //         'fill-color': [
+        //             'interpolate',
+        //             ['linear'],
+        //             ['number', ['get', 'index']],
+        //             0, '#1A9850',
+        //             0.2, '#91CF60',
+        //             0.4, '#D9EF8B',
+        //             0.6, '#FEE08B',
+        //             0.8, '#FC8D59',
+        //             1.0, '#D73027'
+        //         ],
+        //         'fill-opacity': 1.0,
+        //         'fill-outline-color': '#000'
+        //     },
+        //     'filter': ['all', filterCountry, filterYear, filterType]
+        // })
 
         map.getCanvas().style.cursor = 'default';
 
@@ -326,7 +398,9 @@
                 filterCountry = ['==', ['string', ['get', 'GID_0']], country]
             }
 
-            map.setFilter('world', ['all', filterCountry, filterYear, filterType])
+            for (const layer of ['2014', '2015']) {
+                map.setFilter(layer, ['all', filterCountry, filterYear, filterType])
+            }
             setActiveCountry(country)
 
         });
@@ -343,7 +417,11 @@
             var year = parseInt(e.target.value);
             filterYear = ['==', ['number', ['get', 'year']], year]
             // filterYear = ['get', year.toString()+'_index']
-            map.setFilter('world', ['all', filterYear, filterCountry, filterType]);
+            for (const layer of ['2014', '2015']) {
+                map.setFilter(layer, ['all', filterCountry, filterYear, filterType])
+            }
+            // map.setFilter('world', ['all', filterYear, filterCountry, filterType]);
+            // map.setFilter('y2015', ['all', filterCountry, filterYear, filterType])
 
             // update text in the UI
             document.getElementById('active-level').innerText = year;
@@ -358,7 +436,15 @@
             } else {
                 console.log('error');
             }
-            map.setFilter('world', ['all', filterYear, filterCountry, filterType]);
+
+            for (const layer of ['2014', '2015']) {
+                map.setFilter(layer, ['all', filterCountry, filterYear, filterType])
+            }
+            // var x = ['in', ['']]
+            // map.setFilter('world', ['all', filterYear, filterCountry, filterType]);
+            // map.setFilter('y2015', ['all', filterCountry, filterYear, filterType]);
+            // map.setFilter(['literal', ['world', 'y2015']], ['all', filterCountry, filterYear, filterType])
+
         });
 
     });

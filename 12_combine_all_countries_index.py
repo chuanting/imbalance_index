@@ -13,18 +13,31 @@ import pandas as pd
 import glob
 
 
-folder = 'data/final/'
-results = []
-for i, file in enumerate(glob.glob(folder + '*.geojson')):
+# division_folder = 'data/final/division/'
+# division_results = []
+# for i, file in enumerate(glob.glob(division_folder + '*.geojson')):
+#     print(file)
+#     country = gpd.read_file(file)
+#     division_results.append(country)
+#
+# df_division = pd.concat(division_results, ignore_index=True)
+# df_division['type'] = 'division'
+# df_division.to_file('data/final/division.geojson', driver='GeoJSON')
+#
+df_division = gpd.read_file('data/final/division.geojson')
+
+grid_folder = 'data/final/grid/'
+grid_results = []
+for i, file in enumerate(glob.glob(grid_folder + '*.geojson')):
     print(file)
-    # if i > 2:
+    # if i > 5:
     #     break
     country = gpd.read_file(file)
-    results.append(country)
+    grid_results.append(country)
+df_grid = pd.concat(grid_results, ignore_index=True)
+df_grid.drop(['lon', 'lat'], inplace=True, axis=1)
+df_grid['type'] = 'grid'
+df_grid.to_file('data/final/grid.geojson', driver='GeoJSON')
 
-other_sources = gpd.read_file('data/gadm36_shp/world_all_levels_pop_v2.geojson')
-www = other_sources.loc[other_sources['GID_0']=='WWW']
-results.append(www)
-final_index = pd.concat(results)
+final_index = pd.concat([df_division, df_grid], ignore_index=True)
 final_index.to_file('d:/final_index.geojson', driver='GeoJSON', index=False)
-# gpd.GeoDataFrame(final_index).to_file()
