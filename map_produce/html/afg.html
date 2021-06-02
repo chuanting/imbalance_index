@@ -122,8 +122,8 @@
     </div>
 
     <div class='session' id='sliderbar'>
-        <h2>Year: <label id='active-level'>2014</label></h2>
-        <input id='slider' class='row' type='range' min='2014' max='2022' step='1' value='2014'/>
+        <h2>Year: <label id='active-level'>2011</label></h2>
+        <input id='slider' class='row' type='range' min='2011' max='2022' step='1' value='2011'/>
     </div>
 
     <p style="text-align: justify">The imbalance index calculation can be found on our <a
@@ -136,9 +136,6 @@
         This map is designed by <a href="https://chuanting.github.io">Chuanting Zhang</a> @
         <a href="https://www.kaust.edu.sa/en">KAUST</a> and Yi Cao @ <a href="https://www.ujn.edu.cn/">UJN</a>
     </p>
-<!--    <div class="session" id="full" style="align-content: center">-->
-<!--        <button onclick="openFullscreen();">Fullscreen</button>-->
-<!--    </div>-->
 
 
 </div>
@@ -151,21 +148,27 @@
     var map = new mapboxgl.Map({
         container: 'map', // container element id
         style: 'mapbox://styles/mapbox/dark-v10',
+        // style: 'mapbox://styles/zctzzy/ckp1h4pn05fcu17mhsy0ok65c'
         center: [-102.80273616, 40.84706036], // initial map center in [lon, lat]
+        // center: [43.76952991, 24.70026051],
         zoom: 4,
     });
 
-    // create choice list
     let dropdown = document.getElementById('country');
     dropdown.length = 0;
 
     let defaultOption = document.createElement('option');
-    dropdown.selectedIndex = 0;
+    // dropdown.add(defaultOption);
+    dropdown.selectedIndex = 1;
 
     const url = '../data/country_center_zoom.json';
     let countries;
 
-    fetch(url).then(function (response) {
+    // const myRequest = new Request(url);
+
+    fetch(url)
+        .then(
+            function (response) {
                 if (response.status !== 200) {
                     console.warn('Looks like there was a problem. Status Code: ' +
                         response.status);
@@ -174,7 +177,11 @@
                 // Examine the text in the response
                 response.json().then(function (data) {
                     let option;
+
                     countries = data;
+
+                    // console.log(data)
+
                     for (let i = 0; i < data.length; i++) {
                         option = document.createElement('option');
                         option.text = data[i].NAME_0;
@@ -187,57 +194,81 @@
         .catch(function (err) {
             console.error('Fetch Error -', err);
         });
+
+    let division_config = {
+        '2011': {
+            'id': '2011',
+            'layer': 'division_year_2011',
+        },
+        '2012': {
+            'id': '2012',
+            'layer': 'division_year_2012',
+        },
+        '2013': {
+            'id': '2013',
+            'layer': 'division_year_2013',
+        },
+        '2014': {
+            'id': '2014',
+            'layer': 'division_year_2014',
+        }
+    }
+
     map.on('load', function () {
-        var filterCountry = ['==', ['string', ['get', 'GID_0']], 'USA'];
-        var filterYear = ['==', ['number', ['get', 'year']], 2014];
-        var filterType = ['==', ['string', ['get', 'type']], 'grid']
+        var filterCountry = ['!=', ['string', ['get', 'GID_0']], 'AAA'];
+        var filterYear = ['==', ['number', ['get', 'year']], 2011];
+        var filterType = ['==', ['string', ['get', 'type']], 'division']
 
-        map.addSource('mb', {
+        map.addSource('division', {
             'type': 'vector',
-            'url': 'mapbox://zctzzy.c35e0m7b',
-        });
-
-        map.addLayer({
-            'id': 'world',
-            'type': 'fill',
-            'source': 'mb',
-            'source-layer': 'final_index',
-            paint: {
-                'fill-color': [
-                    'interpolate',
-                    ['linear'],
-                    ['number', ['get', 'index']],
-                    0, '#1A9850',
-                    0.2, '#91CF60',
-                    0.4, '#D9EF8B',
-                    0.6, '#FEE08B',
-                    0.8, '#FC8D59',
-                    1.0, '#D73027'
-                ],
-                'fill-opacity': 1.0,
-                'fill-outline-color': '#000'
-            },
-            'filter': ['all', filterCountry, filterYear, filterType]
+            'url': 'mapbox://zctzzy.48id35hg',
         })
 
+        map.addLayer({
+                'id': 'division-vis',
+                'type': 'fill',
+                'source': 'division',
+                'source-layer': 'grid',
+                paint: {
+                    'fill-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['number', ['get', 'index']],
+                        0, '#1A9850',
+                        0.2, '#91CF60',
+                        0.4, '#D9EF8B',
+                        0.6, '#FEE08B',
+                        0.8, '#FC8D59',
+                        1.0, '#D73027'
+                    ],
+                    'fill-opacity': 1.0,
+                    'fill-outline-color': '#000'
+                },
+                'filter': ['all', filterCountry, filterYear]
+            });
         map.getCanvas().style.cursor = 'default';
+
 
         document.getElementById('country').addEventListener('input', function (e) {
             var country = e.target.value
+            console.log(e.target.selectedIndex)
+
             if (country == 'WWW') {
-                filterCountry = ['==', ['string', ['get', 'GID_0']], 'WWW']
+                filterCountry = ['!=', ['string', ['get', 'GID_0']], 'AAA']
             } else {
                 filterCountry = ['==', ['string', ['get', 'GID_0']], country]
             }
 
-            map.setFilter('world', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('division-vis', ['all', filterCountry, filterYear])
             setActiveCountry(e.target.selectedIndex)
 
         });
 
-        var activeIdx = 0;
+        var activeIdx = 1;
+
         function setActiveCountry(idx) {
-            if (idx === activeIdx) return;
+            if (idx === activeIdx)
+                return;
             map.flyTo(countries[idx]);
             activeIdx = idx;
         }
@@ -245,7 +276,12 @@
         document.getElementById('slider').addEventListener('input', function (e) {
             var year = parseInt(e.target.value);
             filterYear = ['==', ['number', ['get', 'year']], year]
-            map.setFilter('world', ['all', filterYear, filterCountry, filterType]);
+
+            map.setFilter('division-vis', ['all', filterCountry, filterYear])
+            // filterYear = ['get', year.toString()+'_index']
+            // map.setFilter('world', ['all', filterYear, filterCountry, filterType]);
+            // map.setFilter('y2015', ['all', filterCountry, filterYear, filterType])
+
             // update text in the UI
             document.getElementById('active-level').innerText = year;
         });
@@ -259,9 +295,12 @@
             } else {
                 console.log('error');
             }
-            map.setFilter('world', ['all', filterYear, filterCountry, filterType]);
+
+            map.setFilter('division-vis', ['all', filterCountry, filterYear])
+
         });
 
     });
+
 </script>
 </html>

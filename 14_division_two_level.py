@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 -----------------------------------------------
-# File: 02_division_level_index.py
+# File: 14_division_two_level.py
 # This file is created by Chuanting Zhang
 # Email: chuanting.zhang@kaust.edu.sa
-# Date: 2021-03-18 (YYYY-MM-DD)
+# Date: 2021-06-02 (YYYY-MM-DD)
 -----------------------------------------------
 """
 import numpy as np
@@ -45,10 +45,10 @@ def imbalance_index(pop, bs, users_per_bs=100, a=1.0, b=1.0):
 def main():
     # worldwide boundaries in shape file
     folder = 'data/'
-    save_folder = 'data/final/division/'
+    save_folder = 'data/final/division_two_levels/'
     if not os.path.isdir(save_folder):
         os.makedirs(save_folder)
-    poly_file = folder + 'gadm36_shp/three-levels-4-digit.geojson'
+    poly_file = folder + 'gadm36_shp/two-levels-4-digit.geojson'
     print('Loading worldwide boundary file')
     worldwide = gpd.read_file(poly_file)
     # BS file
@@ -93,7 +93,7 @@ def main():
         start = time.time()
         df_poly = GeoDataFrame(df_poly)
         pop_per_grid = sjoin(gdf_population, df_poly)
-        pop_per_grid_group = pop_per_grid.groupby(['NAME_2']).sum().reset_index()[['NAME_2', 'pop']]
+        pop_per_grid_group = pop_per_grid.groupby(['NAME_1']).sum().reset_index()[['NAME_1', 'pop']]
         print('Time: {:}'.format(time.time() - start))
 
         print('Calculating # of BS per grid')
@@ -106,10 +106,10 @@ def main():
             bs_year = gdf_bs.loc[gdf_bs['date'] <= unix_stamp]
 
             bs_per_grid = sjoin(bs_year, df_poly)
-            bs_per_grid_group = bs_per_grid.groupby('NAME_2').sum().reset_index()[['NAME_2', 'bs']]
+            bs_per_grid_group = bs_per_grid.groupby('NAME_1').sum().reset_index()[['NAME_1', 'bs']]
 
-            pop_align = pd.merge(left=pop_per_grid_group, right=df_poly, on='NAME_2', how='right')
-            bs_align = pd.merge(left=bs_per_grid_group, right=df_poly, on='NAME_2', how='right')
+            pop_align = pd.merge(left=pop_per_grid_group, right=df_poly, on='NAME_1', how='right')
+            bs_align = pd.merge(left=bs_per_grid_group, right=df_poly, on='NAME_1', how='right')
 
             pop_align['pop'].fillna(0, inplace=True)
             bs_align['bs'].fillna(0, inplace=True)

@@ -199,14 +199,14 @@
 
     map.on('load', function () {
         var filterCountry = ['==', ['string', ['get', 'GID_0']], 'WWW'];
-        var filterYear = ['==', ['number', ['get', 'year']], 2014];
-        var filterType = ['==', ['string', ['get', 'type']], 'grid']
+        var filterYear = ['==', ['number', ['get', 'year']], 2011];
+        var filterType = ['==', ['string', ['get', 'type']], 'division']
         map.addLayer({
             'id': 'world',
             'type': 'fill',
             source: {
                 type: 'geojson',
-                data: '../../data/final/grid.geojson' // replace this with the url of your own geojson
+                data: '../../data/final/division.geojson' // replace this with the url of your own geojson
             },
             paint: {
                 'fill-color': [

@@ -102,3 +102,14 @@ tippecanoe -zg -o out.mbtiles --drop-densest-as-needed in.geojson
 ```shell script
 ogr2ogr -f GEOJSON results.geojson world.pop.csv -oo X_POSSIBLE_NAMES=longitude -oo Y_POSSIBLE_NAMES=latitude -oo KEEP_GEOM_COLUMNS=NO
 ```
+
+
+## Change name
+```shell script
+for file in *.geojson; do mv "$file" "${file/grid_0.4_0.4.}"; done
+```
+
+## tippecanoe batch
+```shell script
+for file in *.geojson; do tippecanoe -z8 -f --layer=grid -o "$file".mbtiles "$file"; done
+```

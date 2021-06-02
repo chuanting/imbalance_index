@@ -108,45 +108,22 @@
     <div class="session">
         <label for="country">Country:</label>
         <select name="country" id="country">
-            <!--            <option value="WWW">WWW</option>-->
-            <option value="USA" selected="selected">United States</option>
-            <option value="AGO">Angola</option>
-            <option value="FRA">French</option>
-            <option value="VNM">ViteNam</option>
-            <option value="BRA">Brazil</option>
-            <option value="SAU">Saudi Arabia</option>
-            <option value="ALB">Albania</option>
-            <option value="DZA">Algeria</option>
-            <option value="BHR">Bahrain</option>
-            <option value="BGD">Bangladesh</option>
-            <option value="BEL">Belgium</option>
-            <option value="COL">Colombia</option>
-            <option value="DEU">Germany</option>
-            <option value="ARG">Argentina</option>
-            <option value="BOL">Bolivia</option>
-            <option value="CHL">Chile</option>
-            <option value="PER">Peru</option>
-            <option value="VEN">Venezuela</option>
-            <option value="ECU">Ecuador</option>
-            <option value="SUR">Suriname</option>
-            <option value="GUY">Guyana</option>
-
         </select>
     </div>
 
     <div class='session'>
         <label>Visualization Type: </label>
         <div class='col' id='filters'>
-            <input id='admin' type='radio' name='toggle' value='admin'>
+            <input id='admin' type='radio' name='toggle' value='admin' checked="checked">
             <label for='admin'>Administrative Division</label>
-            <input id='grid' type='radio' name='toggle' value='grid' checked="checked">
+            <input id='grid' type='radio' name='toggle' value='grid'>
             <label for='grid'>Grid</label>
         </div>
     </div>
 
     <div class='session' id='sliderbar'>
-        <h2>Year: <label id='active-level'>2014</label></h2>
-        <input id='slider' class='row' type='range' min='2014' max='2022' step='1' value='2014'/>
+        <h2>Year: <label id='active-level'>2011</label></h2>
+        <input id='slider' class='row' type='range' min='2011' max='2022' step='1' value='2011'/>
     </div>
 
     <p style="text-align: justify">The imbalance index calculation can be found on our <a
@@ -174,142 +151,75 @@
     var map = new mapboxgl.Map({
         container: 'map', // container element id
         style: 'mapbox://styles/mapbox/dark-v10',
-        // style: 'mapbox://styles/zctzzy/ckp1h4pn05fcu17mhsy0ok65c'
         center: [-102.80273616, 40.84706036], // initial map center in [lon, lat]
-        // center: [43.76952991, 24.70026051],
-        zoom: 4,
+        zoom: 1,
     });
 
-    var countries = {
-        'Worldwide': {
-            center: [-18.606628, 37.718556],
-            zoom: 4,
-        },
-        'USA': {
-            center: [-102.80273616, 40.84706036],
-            zoom: 4
-        },
-        'CHN': {
-            center: [107.386266, 33.125283],
-            zoom: 4,
-        },
-        'FRA': {
-            center: [1.96289018, 47.15984001],
-            zoom: 6,
-        },
-        'AGO': {
-            center: [17.459119, -12.626045],
-            zoom: 5
-        },
-        'VNM': {
-            center: [106.41357288, 17.63006299],
-            zoom: 6,
-        },
+    // create choice list
+    let dropdown = document.getElementById('country');
+    dropdown.length = 0;
 
-        'SAU': {
-            center: [43.76952991, 24.70026051],
-            zoom: 6,
-        },
-        'ALB': {
-            center: [20.0811767, 40.76806171],
-            zoom: 6,
-        },
-        'DZA': {
-            center: [2.9999825, 28.0000272],
-            zoom: 6,
-        },
-        'BHR': {
-            center: [50.5344606, 26.1551249],
-            zoom: 6,
-        },
-        'BGD': {
-            center: [90.2932426, 24.4768783],
-            zoom: 6,
-        },
-        'BEL': {
-            center: [4.57946776, 50.66774274],
-            zoom: 6,
-        },
-        'COL': {
-            center: [-73.783892, 2.8894434],
-            zoom: 6,
-        },
-        'DEU': {
-            center: [10.25115965, 51.16126064],
-            zoom: 6,
-        },
-        'ARG': {
-            center: [-65.13977052, -34.89268966],
-            zoom: 4,
-        },
-        'BOL': {
-            center: [-64.9912286, -17.0568696],
-            zoom: 6,
-        },
-        'CHL': {
-            center: [-71.3187697, -31.7613365],
-            zoom: 4,
-        },
-        'PER': {
-            center: [-75.0458515, -6.8699697],
-            zoom: 6,
-        },
-        'BRA': {
-            center: [-53.2, -10.3333333],
-            zoom: 4,
-        },
+    let defaultOption = document.createElement('option');
+    dropdown.selectedIndex = 0;
 
+    const url = '../data/country_center_zoom.json';
+    let countries;
 
-        'VEN': {
-            center: [-66.1109318, 8.0018709],
-            zoom: 6,
-        },
-
-        'ECU': {
-            center: [-79.3666965, -1.3397668],
-            zoom: 6,
-        },
-
-        'SUR': {
-            center: [-56.0771187, 4.1413025],
-            zoom: 6,
-        },
-        'GUY': {
-            center: [-58.6416891, 4.8417097],
-            zoom: 6,
-        },
-    }
-
-    let config = {
-        's1': {
-            'id': '2014',
-            'url': 'mapbox://zctzzy.2gwmr415',
-            'name': 'year_2014',
-        },
-        's2': {
-            'id': '2015',
-            'url': 'mapbox://zctzzy.1x9ao5xr',
-            'name': 'year_2015',
+    fetch(url).then(function (response) {
+            if (response.status !== 200) {
+                console.warn('Looks like there was a problem. Status Code: ' +
+                    response.status);
+                return;
+            }
+            // Examine the text in the response
+            response.json().then(function (data) {
+                let option;
+                countries = data;
+                for (let i = 0; i < data.length; i++) {
+                    option = document.createElement('option');
+                    option.text = data[i].NAME_0;
+                    option.value = data[i].GID_0;
+                    dropdown.add(option);
+                }
+            });
         }
-    }
-
+    )
+        .catch(function (err) {
+            console.error('Fetch Error -', err);
+        });
     map.on('load', function () {
-        var filterCountry = ['==', ['string', ['get', 'GID_0']], 'USA'];
-        var filterYear = ['==', ['number', ['get', 'year']], 2014];
-        var filterType = ['==', ['string', ['get', 'type']], 'grid']
+        var filterCountry = ['==', ['string', ['get', 'GID_0']], 'WWW'];
+        var filterYear = ['==', ['number', ['get', 'year']], 2011];
+        var filterType = ['==', ['string', ['get', 'type']], 'division'];
 
-        for (let k in config) {
-            console.log(k)
-            map.addSource(k, {
-                'type': 'vector',
-                'url': config[k]['url']
-            })
+        map.addSource('division-three-src', {
+            'type': 'vector',
+            'url': 'mapbox://zctzzy.9ukbg7p5',
+        });
 
-            map.addLayer({
-            'id': config[k]['id'],
+        map.addSource('division-two-src', {
+            'type': 'vector',
+            'url': 'mapbox://zctzzy.bnievjjh',
+        });
+
+        map.addSource('division-one-src', {
+            'type': 'vector',
+            'url': 'mapbox://zctzzy.1tmol6l1',
+        });
+
+
+        map.addSource('grid-src', {
+            'type': 'vector',
+            'url': 'mapbox://zctzzy.dbnw54oz',
+        });
+
+        map.addLayer({
+            'id': 'division-three-layer',
             'type': 'fill',
-            'source': k,
-            'source-layer': config[k]['name'],
+            'source': 'division-three-src',
+            'source-layer': 'division',
+            'minzoom': 4,
+            'maxzoom': 22,
             paint: {
                 'fill-color': [
                     'interpolate',
@@ -328,101 +238,110 @@
             'filter': ['all', filterCountry, filterYear, filterType]
         });
 
-        }
+        map.addLayer({
+            'id': 'division-two-layer',
+            'type': 'fill',
+            'source': 'division-two-src',
+            'source-layer': 'division_two_levels',
+            'minzoom': 0,
+            'maxzoom': 4,
+            paint: {
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['number', ['get', 'index']],
+                    0, '#1A9850',
+                    0.2, '#91CF60',
+                    0.4, '#D9EF8B',
+                    0.6, '#FEE08B',
+                    0.8, '#FC8D59',
+                    1.0, '#D73027'
+                ],
+                'fill-opacity': 1.0,
+                'fill-outline-color': '#000'
+            },
+            'filter': ['all', filterCountry, filterYear, filterType]
+        });
 
-        // map.addSource('mb', {
-        //     'type': 'vector',
-        //     'url': 'mapbox://zctzzy.1x9ao5xr',
-        // });
-        //
-        // map.addSource('mb2014', {
-        //     'type': 'vector',
-        //     'url': 'mapbox://zctzzy.2gwmr415',
-        // })
-        //
-        // map.addLayer({
-        //     'id': '2014',
-        //     'type': 'fill',
-        //     'source': 'mb2014',
-        //     'source-layer': 'year_2014',
-        //     paint: {
-        //         'fill-color': [
-        //             'interpolate',
-        //             ['linear'],
-        //             ['number', ['get', 'index']],
-        //             0, '#1A9850',
-        //             0.2, '#91CF60',
-        //             0.4, '#D9EF8B',
-        //             0.6, '#FEE08B',
-        //             0.8, '#FC8D59',
-        //             1.0, '#D73027'
-        //         ],
-        //         'fill-opacity': 1.0,
-        //         'fill-outline-color': '#000'
-        //     },
-        //     'filter': ['all', filterCountry, filterYear, filterType]
-        // });
-        // map.addLayer({
-        //     'id': '2015',
-        //     'type': 'fill',
-        //     'source': 'mb',
-        //     'source-layer': 'year_2015',
-        //     paint: {
-        //         'fill-color': [
-        //             'interpolate',
-        //             ['linear'],
-        //             ['number', ['get', 'index']],
-        //             0, '#1A9850',
-        //             0.2, '#91CF60',
-        //             0.4, '#D9EF8B',
-        //             0.6, '#FEE08B',
-        //             0.8, '#FC8D59',
-        //             1.0, '#D73027'
-        //         ],
-        //         'fill-opacity': 1.0,
-        //         'fill-outline-color': '#000'
-        //     },
-        //     'filter': ['all', filterCountry, filterYear, filterType]
-        // })
+        map.addLayer({
+            'id': 'division-one-layer',
+            'type': 'fill',
+            'source': 'division-one-src',
+            'source-layer': 'division-one',
+            'maxzoom': 22,
+            'minzoom': 0,
+            paint: {
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['number', ['get', 'index']],
+                    0, '#1A9850',
+                    0.2, '#91CF60',
+                    0.4, '#D9EF8B',
+                    0.6, '#FEE08B',
+                    0.8, '#FC8D59',
+                    1.0, '#D73027'
+                ],
+                'fill-opacity': 1.0,
+                'fill-outline-color': '#000'
+            },
+            'filter': ['all', filterCountry, filterYear, filterType]
+        });
+
+        map.addLayer({
+            'id': 'grid-layer',
+            'type': 'fill',
+            'source': 'grid-src',
+            'source-layer': 'grid',
+            // 'minzoom': 22,
+            // 'maxzoom': 0,
+            paint: {
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['number', ['get', 'index']],
+                    0, '#1A9850',
+                    0.2, '#91CF60',
+                    0.4, '#D9EF8B',
+                    0.6, '#FEE08B',
+                    0.8, '#FC8D59',
+                    1.0, '#D73027'
+                ],
+                'fill-opacity': 1.0,
+                'fill-outline-color': '#000'
+            },
+            'filter': ['all', filterCountry, filterYear, filterType]
+        })
 
         map.getCanvas().style.cursor = 'default';
 
-
         document.getElementById('country').addEventListener('input', function (e) {
             var country = e.target.value
-            console.log(country)
+            filterCountry = ['==', ['string', ['get', 'GID_0']], country]
 
-            if (country == 'WWW') {
-                filterCountry = ['==', ['string', ['get', 'GID_0']], 'WWW']
-            } else {
-                filterCountry = ['==', ['string', ['get', 'GID_0']], country]
-            }
-
-            for (const layer of ['2014', '2015']) {
-                map.setFilter(layer, ['all', filterCountry, filterYear, filterType])
-            }
-            setActiveCountry(country)
+            map.setFilter('division-three-layer', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('division-two-layer', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('division-one-layer', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('grid-layer', ['all', filterCountry, filterYear, filterType])
+            setActiveCountry(e.target.selectedIndex)
 
         });
 
-        var activeChapterName = 'WWW';
+        var activeIdx = 0;
 
-        function setActiveCountry(chapterName) {
-            if (chapterName === activeChapterName) return;
-            map.flyTo(countries[chapterName]);
-            activeChapterName = chapterName;
+        function setActiveCountry(idx) {
+            if (idx === activeIdx) return;
+            map.flyTo(countries[idx]);
+            activeIdx = idx;
         }
 
         document.getElementById('slider').addEventListener('input', function (e) {
             var year = parseInt(e.target.value);
             filterYear = ['==', ['number', ['get', 'year']], year]
-            // filterYear = ['get', year.toString()+'_index']
-            for (const layer of ['2014', '2015']) {
-                map.setFilter(layer, ['all', filterCountry, filterYear, filterType])
-            }
-            // map.setFilter('world', ['all', filterYear, filterCountry, filterType]);
-            // map.setFilter('y2015', ['all', filterCountry, filterYear, filterType])
-
+            map.setFilter('division-three-layer', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('division-two-layer', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('division-one-layer', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('grid-layer', ['all', filterCountry, filterYear, filterType])
             // update text in the UI
             document.getElementById('active-level').innerText = year;
         });
@@ -436,30 +355,23 @@
             } else {
                 console.log('error');
             }
-
-            for (const layer of ['2014', '2015']) {
-                map.setFilter(layer, ['all', filterCountry, filterYear, filterType])
-            }
-            // var x = ['in', ['']]
-            // map.setFilter('world', ['all', filterYear, filterCountry, filterType]);
-            // map.setFilter('y2015', ['all', filterCountry, filterYear, filterType]);
-            // map.setFilter(['literal', ['world', 'y2015']], ['all', filterCountry, filterYear, filterType])
-
+            map.setFilter('division-three-layer', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('division-two-layer', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('division-one-layer', ['all', filterCountry, filterYear, filterType])
+            map.setFilter('grid-layer', ['all', filterCountry, filterYear, filterType])
         });
 
+        // map.on('zoom', function () {
+        //     if (map.getZoom() < 4) {
+        //         filterCountry = ['==', ['string', ['get', 'GID_0']], 'WWW'];
+        //         filterType = ['==', ['string', ['get', 'type']], 'division'];
+        //         map.setFilter('division-three-layer', ['all', filterCountry, filterYear, filterType])
+        //         map.setFilter('division-two-layer', ['all', filterCountry, filterYear, filterType])
+        //         map.setFilter('division-one-layer', ['all', filterCountry, filterYear, filterType])
+        //         map.setFilter('grid-layer', ['all', filterCountry, filterYear, filterType])
+        //     }
+        // });
+
     });
-
-
-    var elem = document.documentElement;
-
-    function openFullscreen() {
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) { /* Safari */
-            elem.webkitRequestFullscreen();
-        } else if (elem.msRequestFullscreen) { /* IE11 */
-            elem.msRequestFullscreen();
-        }
-    }
 </script>
 </html>

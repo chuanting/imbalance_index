@@ -43,8 +43,15 @@ def split_poly_into_grids(poly, x_size, y_size):
 
         # height = (ymax - ymin) / rows
         # width = (xmax - xmin) / cols
-        rows = int((ymax - ymin) / y_size)
-        cols = int((xmax - xmin) / x_size)
+        rows = int(np.floor((ymax - ymin) / y_size))
+        cols = int(np.floor((xmax - xmin) / x_size))
+
+        while rows >= 250:
+            y_size += 0.1
+            rows = int(np.floor((ymax - ymin) / y_size))
+        while cols >= 250:
+            x_size += 0.1
+            cols = int(np.floor((xmax - xmin) / x_size))
 
         if rows == 0:
             rows = 1
@@ -98,12 +105,6 @@ def get_info_per_grid(bs, pop, poly, grid):
     gpd_grid = gpd_grid.loc[df_country_grid.index]
     print('Time: {:}'.format(time.time() - start))
 
-    print('Creating GeoDataFrame from population data...')
-    start = time.time()
-    gdf_population = GeoDataFrame({'pop': pop['population'],
-                                   'geometry': PointArray(pop[['longitude', 'latitude']].values.tolist())})
-    print('Time: {:}'.format(time.time() - start))
-
     start = time.time()
     print('Creating GeoDataFrame from bs data...')
     gdf_bs = GeoDataFrame({'geometry': PointArray(bs[['lon', 'lat']].values.tolist()),
@@ -112,14 +113,13 @@ def get_info_per_grid(bs, pop, poly, grid):
 
     print('Calculating population per grid')
     start = time.time()
-    pop_per_grid = sjoin(gdf_population, gpd_grid)
+    pop_per_grid = sjoin(pop, gpd_grid)
     pop_per_grid_group = pop_per_grid.groupby('id').sum().reset_index()[['id', 'pop']]
     print('Time: {:}'.format(time.time() - start))
 
     print('Calculating # of BS per grid')
-    start = time.time()
     results = []
-    for year in range(2014, 2023):
+    for year in range(2011, 2023):
         print(year)
         dates = pd.to_datetime(str(year))
         unix_stamp = (dates - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
@@ -129,9 +129,6 @@ def get_info_per_grid(bs, pop, poly, grid):
         bs_per_grid_group = bs_per_grid.groupby('id').count().reset_index()[['id', 'index_right']]
         bs_per_grid_group.columns = ['id', 'bs']
         # print('Time: {:}'.format(time.time() - start))
-
-        print('Align BS and grid')
-        start = time.time()
         pop_align = pd.merge(left=pop_per_grid_group, right=gpd_grid, on='id', how='right')
         bs_align = pd.merge(left=bs_per_grid_group, right=gpd_grid, on='id', how='right')
 
@@ -142,6 +139,10 @@ def get_info_per_grid(bs, pop, poly, grid):
         pop_align['bs'] = bs_align['bs']
         pop_align['year'] = year
         pop_align['index'] = imbalance_index(pop_align['pop'], pop_align['bs'])
+
+        pop_align['pop'] = pop_align['pop'].round(4)
+        pop_align['index'] = pop_align['index'].round(4)
+        pop_align.drop(['lon', 'lat'], axis=1, inplace=True)
         results.append(pop_align)
 
     print('Saving to local disk')
@@ -183,47 +184,50 @@ def main():
     poly_file = folder + 'gadm36_shp/country-level-4-digit.geojson'
     print('Loading worldwide boundary file')
     worldwide = gpd.read_file(poly_file)
-    # country_poly = worldwide.loc[worldwide['GID_0']=='WWW']
     df_bs = pd.read_csv('D:/Dataset/cell_towers/cell_towers_2020-12-08-T000000.csv')
-    country_names = 'data/MCI_Data_2020.xls'
-    df_country_info = pd.read_excel(country_names, skiprows=2, sheet_name=2)
-    df_name = df_country_info.loc[df_country_info['Year'] == 2019]
-    for i, name in enumerate(df_name['ISO Code']):
+    country_names = worldwide['GID_0'].unique()
+    for i, name in enumerate(country_names):
         print('Now processing {:} data'.format(name))
+        try:
+            codes = mobile_codes.alpha3(name)
+            if codes.mcc is None:
+                continue
+        except Exception:
+            print('Name {:} is not found'.format(name))
+            continue
 
-        # if name != 'BRB':
-        #     continue
-        if i > 2:
-            break
-        mcc = np.array([mobile_codes.alpha3(name).mcc], dtype=int).ravel()
+        mcc = np.array([codes.mcc], dtype=int).ravel()
         country_bs = df_bs.loc[df_bs['mcc'].isin(mcc)]
         country_pop_file = 'data/{:}.gz'.format(name)
 
-        # load population data
-        if not os.path.exists(country_pop_file):
-            print('File not exists')
-            continue
-
-        df_pop = pd.read_csv(country_pop_file, compression='gzip', header=0, sep='\t')
         df_poly = worldwide.loc[worldwide['GID_0'] == name]
-
         if df_poly.shape[0] == 0:
             continue
 
-        x_size, y_size = 0.3, 0.2
+        # load population data
+        if not os.path.exists(country_pop_file):
+            gdf_population = GeoDataFrame({'pop': 0, 'geometry': PointArray(df_poly.geometry.centroid)})
+        else:
+            df_pop = pd.read_csv(country_pop_file, compression='gzip', header=0, sep='\t')
+            gdf_population = GeoDataFrame({'pop': df_pop['population'],
+                                           'geometry': PointArray(
+                                               df_pop[['longitude', 'latitude']].values.tolist())})
+
+        # df_pop = pd.read_csv(country_pop_file, compression='gzip', header=0, sep='\t')
+        x_size, y_size = 0.4, 0.4
         country_grid = split_poly_into_grids(df_poly, x_size, y_size)
 
         df_poly = GeoDataFrame(df_poly)
         df_grid = gpd.GeoDataFrame.from_features(country_grid['features'])
 
         # get the number of BS and population per grid
-        start = time.time()
-        all_info = get_info_per_grid(country_bs, df_pop, df_poly, df_grid)
+        all_info = get_info_per_grid(country_bs, gdf_population, df_poly, df_grid)
         if all_info.shape[0] == 0:
             continue
         all_info['GID_0'] = name
         all_info = GeoDataFrame(all_info)
-        all_info.to_geopandas().to_file(save_folder + name + '.grid_{:}_{:}.geojson'.format(x_size, y_size), driver='GeoJSON')
+        all_info.to_geopandas().to_file(save_folder + name + '.grid_{:}_{:}.geojson'.format(x_size, y_size),
+                                        driver='GeoJSON')
 
 
 if __name__ == '__main__':
